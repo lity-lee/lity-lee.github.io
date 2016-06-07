@@ -15,7 +15,7 @@ Blog: <http://www.lity-lee.org>
 GitHub: <https://github.com/lity-lee>  
 
 
-### 3.Contract
+### Contract
 
 Email: lity-lee@163.com  
 QQ: 396888158  
