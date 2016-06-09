@@ -1,7 +1,7 @@
 ---
 layout: post
 category: "grogram"
-title:  "windows cmd tool"
+title:  "Cygwin"
 tags: [tools,cmd,linux]
 ---
 
