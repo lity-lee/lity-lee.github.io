@@ -1,6 +1,6 @@
 ---
 layout: post
-category: "grogram"
+category: program
 title:  "排序算法(c++实现)"
 tags: [排序,c++,编程]
 ---

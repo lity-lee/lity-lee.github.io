@@ -1,6 +1,6 @@
 ---
 layout: post
-category: "grogram"
+category: program
 title:  "查找算法(c++实现)"
 tags: [查找,c++,编程]
 ---

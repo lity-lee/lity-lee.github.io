@@ -1,6 +1,6 @@
 ---
 layout: post
-category: "grogram"
+category: program
 title:  "Cygwin"
 tags: [tools,cmd,linux]
 ---

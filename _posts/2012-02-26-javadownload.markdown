@@ -1,6 +1,6 @@
 ---
 layout: post
-category: "program"
+category: program
 title:  "java多线程下载"
 tags: [编程,java,http]
 ---

@@ -2,9 +2,7 @@
 layout: post
 category: android
 title: 'android 布局参数px与dp浅析'
-tags:
-  - android布局
-  - 编程
+tags: [android,布局,编程]
 ---
 
 ### android 布局参数px与dp浅析

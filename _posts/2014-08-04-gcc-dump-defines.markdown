@@ -1,6 +1,6 @@
 ---
 layout: post
-category: "grogram"
+category: program
 title:  "GCC dump preprocessor defines"
 tags: [gcc,编译,编程]
 ---

@@ -1,6 +1,6 @@
 ---
 layout: post
-category: "program"
+category: program
 title:  "线程池概念及实现"
 tags: [编程,java,thread]
 ---

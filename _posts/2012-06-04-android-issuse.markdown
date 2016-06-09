@@ -1,6 +1,6 @@
 ---
 layout: post
-category: "android"
+category: android
 title:  "Android中的一些小问题 "
 tags: [android,编程]
 ---
@@ -12,7 +12,7 @@ tags: [android,编程]
 1. ImageButton在ListItem中，ListView的onItemClickListener事件监听不到
     一般遇到这种情况，都是先把ListItem中有可能获得焦点的View(如Button)设置android:focusable="false",就可以监听到了。
  然如果ListItem中有ImageButton，这样设置也是监听不到。原因是ImageButton的构造方法中增加了setFocusable(true);这行代码。
- 
+
 1. Gallery中滚动条滚动时无法显示出来
     原因是：Gallery.onTouchEvent()方法中用GestureDetector类来对触摸事件进行处理, 未调用super.onTouchEvent(), 主要是未调用awakenScrollBars()。
 
