@@ -1,0 +1,49 @@
+---
+layout: post
+category: program
+title:  "河南豫剧Mp3下载"
+tags: [豫剧,shell,mp3下载]
+---
+
+### 批量从河南豫剧网抓取Mp3曲剧
+
+所有下载资源来自河南豫剧网(http://www.00394.net/)。
+
+由于此网站提供的静态下载地址不能通过迅雷批量规则来批量下载。所以此脚本的实现原理是通过规则生成相应的动态下载地址，然后抓取内容分析出静态下载地址， 然后下载到本地。
+
+多次浏览网站发现Mp3分类的动态下载地址为http://www.00394.net/plus/download.php?open=0&aid=$i&cid=3，且aid主要集中在3442-10220。
+
+脚本执行结束后会在当前目录生成三个文件， error存放解析失败的错误日志； ok存放解析成功的日志； result存放解析成功的静态地址。
+
+下面是Linux shell脚本， 你可以使用Linux系统， 也可以在Windows上模拟Linux环境， 这里推荐[Cygwin](https://www.cygwin.com/)。
+
+```
+#!/bin/sh
+rm -fv result error ok
+for i in $(seq 3442 1 10220)
+do
+	echo $i;
+	url="http://www.00394.net/plus/download.php?open=0&aid=$i&cid=3";
+	curl -o data --connect-timeout 20 --max-time 30 "$url";
+	data=`cat data | iconv -f gbk -t utf-8`
+	ads=`echo $data | grep -oE 'href="[^"=]*\.mp3"' | sed 's/href="\([^"=]*\.mp3\)"/\1/'`
+	echo "$ads"
+	if [ "$ads" = "" ]; then
+		echo "fail to parse $url";
+		echo "fail to parse $url" >> error;
+	else
+		echo "parse $url to downUrl $ads";
+		echo "parse $url to downUrl $ads" >> ok;
+		echo $ads >> result;
+
+		ads=`echo -n $ads | php -r "echo urldecode(fgets(STDIN));"`
+		fileName=${ads##*/}
+		echo "$fileName"
+		if [ -f "$fileName" ]; then
+		else
+			curl -o "$fileName" --referer "$url" "$ads"
+		fi
+	fi
+	exit
+done
+```
