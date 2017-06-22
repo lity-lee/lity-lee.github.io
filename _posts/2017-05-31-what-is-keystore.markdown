@@ -76,20 +76,14 @@ sha256sum cert
 1.私钥加密，公钥解密
 
 ```
-
 openssl rsautl -inkey rsa_private_key.pem -sign -in data -out encryptdata
-
 openssl rsautl -inkey rsa_public_key.pem -in encryptdata -verify -pubin
-
 
 ```
 
 2.公钥加密，私钥解密
 
 ```
-
 openssl rsautl -encrypt -pubin -inkey new_public_key.pem -in data -out encryptdata
-
 openssl rsautl -decrypt -inkey new_private_key.pem -in encryptdata
-
 ```
