@@ -12,7 +12,7 @@ tags: [adb,usb,driver]
 ```shell
 adb shell dumpsys activity top | head -n 10
 ```
-![dumpactivity](/assets/2017-12-16_dumpactivity.png)
+![dumpactivity](../assets/2017-12-16_dumpactivity.png)
 
 #### 2. 备份和还原所有安装的apk
 
