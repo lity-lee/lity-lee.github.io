@@ -12,7 +12,7 @@ tags: [adb,usb,driver]
 ```shell
 adb shell dumpsys activity top | head -n 10
 ```
-![perl_cn_charater1](/assets/2017-12-16_dumpactivity.png)
+![dumpactivity](/assets/2017-12-16_dumpactivity.png)
 
 #### 2. 备份和还原所有安装的apk
 
@@ -77,7 +77,7 @@ rm apks
 ```
 lsusb
 ```
-![usb_device_info](/assets/usb_device_info.png)
+![usb_device_info](/assets/2017-12-12_usb_device_info.png)
 
 记录ID，访问网站查看usb设备类型（设备是什么）
 
@@ -163,7 +163,7 @@ usb_adb_init(usb_linux_client.c)
 ```
 
 usb_adb_init的内容, 可以确定adbd确实访问了<font color="red">/dev/android_adb</font>文件（设备结点） 
-![adbd_access_file](/assets/2017-12-16_adbd_access_file.png)
+![adbd_usb_adb_init](/assets/2017-12-16_adbd_usb_adb_init.png)
 
 usb_linux_client.c文件定义读取函数，从实现上看它主要通过/dev/android_adb文件与外界通信。
 
