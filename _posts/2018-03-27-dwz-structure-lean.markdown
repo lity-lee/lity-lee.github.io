@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: "web"
 title:  "DWZ结构学习和源代码研究"
 tags: [dwz,javascript, jQuery]
 ---
@@ -18,7 +18,7 @@ DWZ基于jQuery，可以非常方便的定制特定需求的UI组件，并以jQu
 
 ### DWZ 特点与优点
 
-**
+
 
 
 
