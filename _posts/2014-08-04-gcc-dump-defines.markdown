@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: linux
 title:  "GCC dump preprocessor defines"
 tags: [gcc,编译,编程]
 ---

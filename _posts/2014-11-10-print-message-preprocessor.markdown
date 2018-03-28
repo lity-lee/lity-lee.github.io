@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: linux
 title:  "print a message from the C preprocessor"
 tags: [gcc,编译,编程]
 ---

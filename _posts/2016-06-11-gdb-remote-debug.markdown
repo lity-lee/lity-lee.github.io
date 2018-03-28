@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: linux
 title:  "gdb远程调试的一般步骤"
 tags: [gdb,调试,编程]
 ---

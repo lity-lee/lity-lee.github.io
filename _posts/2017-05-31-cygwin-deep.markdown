@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: cygwin
 title:  "cygwin深度使用"
 tags: [cygwin,shell,cmdline]
 ---

@@ -10,13 +10,13 @@ name: "李同垒的博客"
 url: http://www.lity-lee.org
 domain: www.lity-lee.org
 all_categories: [
-["android", "Android开发","/posts/android.html"], 
-["program", "软件编程","/posts/program.html"],
-["web", "Web建站","/posts/web.html"], 
-["linux", "Linux相关","/posts/linux.html"],
-["read", "读书笔记","/posts/read.html"], 
-["other", "杂记","/posts/other.html"],
-["about", "关于","/about.html"]
+["android", "Android","/posts/android.html"], 
+["program", "Program","/posts/program.html"],
+["web", "Web","/posts/web.html"], 
+["linux", "Linux","/posts/linux.html"],
+["cygwin", "Cygwin","/posts/cygwin.html"], 
+["mlai", "Mlai","/posts/mlai.html"],
+["about", "About","/about.html"]
 ]
 
 paginate: 8

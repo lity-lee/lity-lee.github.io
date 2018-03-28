@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: cygwin
 title:  "cygwin安装nodejs环境"
 tags: [cygwin,nodejs]
 ---

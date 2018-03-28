@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: linux
 title:  "Make one gcc warning an error"
 tags: [gcc,编译,编程]
 ---

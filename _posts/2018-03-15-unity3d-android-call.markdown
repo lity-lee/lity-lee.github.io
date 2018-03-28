@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: android
 title:  "unity3d在Android平台上三语言互相调用及堆栈访问"
 tags: [android,unity3d,c#/java/native]
 ---

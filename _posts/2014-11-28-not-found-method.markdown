@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: android
 title:  "no implementation found in native"
 tags: [gcc,编译,编程]
 ---

@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: linux
 title:  "perl正则，unicode匹配"
 tags: [正则,shell,编程]
 ---

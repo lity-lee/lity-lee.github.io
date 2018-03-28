@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: cygwin
 title:  "Cygwin"
 tags: [tools,cmd,linux]
 ---
