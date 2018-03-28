@@ -15,96 +15,177 @@ DWZ框架支持用HTML扩展的方式来代替JavaScript代码，只要懂HTML�
 
 DWZ基于jQuery，可以非常方便的定制特定需求的UI组件，并以jQuery插件的形式发布出来，如有需要也可做定制化开发。
 
+[***官方网站***](http://jui.org/)
+ 
+我总结的：<font color="red">一个JavaScript框架，不像一个类库，不是用于扩展javascript的功能(如jQuery)， 而像扩展HTML功能的。</font>
 
 ### DWZ 特点与优点
 
+第一次打开页面时载入界面到客户端, 之后和服务器的交互只是数据交互, 不占用界面相关的网络流量.
+
+[***特点演示***](http://www.5admo.cn)
+
+支持HTML扩展方式来调用DWZ组件. 
+标准化Ajax开发, 降低Ajax开发成本.
+
+* 完全开源，源码没有做任何混淆处理，方便扩展。
+* CSS和JS代码彻底分离，修改样式方便。
+* 简单实用，扩展方便，轻量级框架，快速开发。
+* 仍然保留了HTML的页面布局方式。
+* 支持HTML扩展方式调用UI组件，开发人员不需写JS。
+* 只要懂HTML语法不需精通JS，就可以使用Ajax开发后台。
+* 基于jQuery，UI组件以jQuery插件的形式发布，扩展方便。
+
+### 扩展的"HTML标签"
+
+[***使用手册***](https://gitee.com/dwzteam/dwz_jui/raw/master/doc/dwz-user-guide.pdf)
 
 
+### 扩展的标签是如何实现的
 
-
-
-
-
-在Android平台上开发unity3d游戏，有三种不同的编程语言java, c/c++, c#，有时免不了三种语言之前的互相调用。比如现在有一个已经完成某一功能的SDK, 游戏开发者需要调用此SDK，SDK被调用后完成功能后传递结果到C#，表面上看只涉及c#调用java, java调用c#, 并没有c/c++语言什么事儿，然而好像游戏开发人员需要调用java语言写好的SDK, java
-很久以前我就想学习一下汇编语言，或者写个hello world什么的，但发现很难“找齐”一个完整的开发流程，后来也是在无意中（自己多年坚持下）找到的。在这个环境下，你可以尽情地“玩耍”，像学习c/c++语言一样来快速地学习汇编，c/c++语言这样的学习环境是很容易找到的，而汇编语言的就不那么容易了。所以这篇仅于记录，共勉有同等需求的人。
-
-
-* 操作系统：linux(ubuntu)
-* 编辑器：sublime (nasm 插件)
-* 汇编器：nasm
-* 链接器：ld
-* 调试工具：gdb
-
-#### 1. c#调用cxx
-
-
-
-
-linux、ld、gdb一般的linux操作系统都会自带，如果没有可以使用相应的操作系统命令来安装，在ubuntu上面使用apt-get即可。
-
-sublime 可能相对有点复杂， 请参考[***https://www.sublimetext.com/***](https://www.sublimetext.com/)
-
-nasm 是开源的，安装方式更多选择一点， 可参考[***http://www.nasm.us/***](http://www.nasm.us/)。
-
-sublime nasm 插件， 具体如何使用sublime来安装插件，就不再叙述了， 这里主要截图防止安装不对的插件。
-
-![sublime_nasm](../assets/2018-02-18_sublime_nasm.png)
-
-#### 2. c#调用java
-
-
-
-sublime及sublime nasm 插件安装完毕后，可创建汇编文件进行编辑，且有“智能提示”功能，如下图所示
-
-![sublime_edit](../assets/2018-02-18_sublime_edit.png)
-
-
-写好汇编程序，源代码存放在一个叫hello.asm的文件中，它是一个32位的程序，那么怎样汇编、链接、运行、调试呢？
+DWZ的初始化
 
 ```
-nasm -f elf32 hello.asm -g
-ld -m elf_i386 hello.o
-./a.out
-gdb a.out
+DWZ.init("dwz.frag.xml", {})
+initEnv() [async call]
+{
+	initLayout()
+	initUI()
+} [timer call] (我不喜欢定时器)
 ```
 
-上面的4条命令分别对应汇编、链接、运行、调试。使用gdb调试如下
+[***源代码参考***](http://www.5admo.cn/public/dwz/js/dwz.core.js)
 
-![nasm_gdb](../assets/2018-02-18_nasm_gdb.png)
+initUI分析(扩展标签的实现)及其完成的主要任务
 
-反汇编之后与源代码一致。
+1. 处理各种控件，包括 tabs, jTree, checkbox, xheditor, uploadify等。
+2. 增加控件数据
+3. 绑定控件风格, 与css连接
+4. 添加控件事件处理函数
+5. 调用控件的初化函数
 
-#### 3. cxx调用c# 
+下面摘出绑定控件风格部分
+```
+	// init styles
+	$("input[type=text], input[type=password], textarea", $p).addClass("textInput").focusClass("focus");
 
+	$("input[readonly], textarea[readonly]", $p).addClass("readonly");
+	$("input[disabled=true], textarea[disabled=true]", $p).addClass("disabled");
 
+	$("input[type=text]", $p).not("div.tabs input[type=text]", $p).filter("[alt]").inputAlert();
 
-#### 4. cxx调用java
+	//Grid ToolBar
+	$("div.panelBar li, div.panelBar", $p).hoverClass("hover");
 
-#### 5. java调用c# 
-
-#### 6. java调用c# 
-
-程序码代码
-
-```nasm
-BITS 32
-section .data
-		msg db "Hello, world!", 0xA
-		len equ $ - msg
-section .text
-global _start
-_start:
-        mov edx, len;
-		mov ecx, msg;
-		mov ebx, 1;
-		mov eax, 4;
-		int 0x80;
-
-		mov ebx, 0;
-		mov eax, 1;
-		int 0x80;
+	//Button
+	$("div.button", $p).hoverClass("buttonHover");
+	$("div.buttonActive", $p).hoverClass("buttonActiveHover");
+	
+	//tabsPageHeader
+	$("div.tabsHeader li, div.tabsPageHeader li, div.accordionHeader, div.accordion", $p).hoverClass("hover");
 ```
 
-这里是两个系统调用，分别是向1文件中(标准输出流)写内容和调用exit来退出程序。
-看这个网站就会明白为什么这样写或者还可以调用更多的linux系统调用，[***http://syscalls.kernelgrok.com/***](http://syscalls.kernelgrok.com/)。
+[***源代码参考***](http://www.5admo.cn/public/dwz/js/dwz.ui.js)
+
+### dwz.frag.xml 配置文件
+
+从上面可以看到DWZ.init到initEnv是异步调用，原因时需要向服务器请求dwz.frag.xml文件， 此文件的内容主要是公共部分的html代码, 比如dialog, loading, pagintion等。
+
+[***dwz.frag.xml***](http://www.5admo.cn/dwz.frag.xml)
+
+### 表单的验证与提交（以增加角色为例演示）
+
+[***效果演示***](http://www.5admo.cn)
+
+```
+
+<div class="pageContent">
+	<form method="post" action="<?php echo Yii::app()->createUrl("admin/role/Add", array('navTabId'=>Yii::app()->request->getQuery('navTabId')))?>" class="pageForm required-validate" onsubmit="return validateCallback(this, dialogAjaxDone)">
+		<div class="pageFormContent" layoutH="56">
+			<p>
+				<label>角色名：</label>
+                                <input name="role[role_name]" type="text" class="required" size="30" value="" title="必须填写角色名"/>
+			</p>
+			<p>
+				<label>描述：</label>
+				<input name="role[role_desc]" type="text" size="30" value="" alt=""/>
+			</p>
+		</div>
+		<div class="formBar">
+			<ul>
+				<li><div class="buttonActive"><div class="buttonContent"><button type="submit">保存</button></div></div></li>
+				<li>
+					<div class="button"><div class="buttonContent"><button type="button" class="close">取消</button></div></div>
+				</li>
+			</ul>
+		</div>
+	</form>
+</div>
+
+```
+
+说明：
+1. form 增加 class="pageForm required-validate" onsubmit="return validateCallback(this, dialogAjaxDone)"
+2. 必填的文本输入框增加 class="required" title="错误提示" 即可。
+3. validateCallback是实现对设定规则的验证，验证失败不提交表单。
+4. dialogAjaxDone 是表单提交后响应器响应处理函数。
+5. 一般 onsubmit的是固定的，除非dwz实现的规则无法满足您的业务验证。
+
+源代码参考：
+
+[***validateCallback***](http://www.5admo.cn/public/dwz/js/dwz.ajax.js)
+
+[***form.valid***](http://www.5admo.cn/public/jquery/jquery.validate.js)
+
+[***dialogAjaxDone***](http://www.5admo.cn/public/dwz/js/dwz.ajax.js)
+
+
+### a标签ajaxTodo扩展(删除角色为例)
+
+[***效果演示***](http://www.5admo.cn)
+
+```
+<a href="<?php echo Yii::app()->createUrl("admin/role/delete", array('roleid'=>$role->role_id))?>" target="ajaxTodo" title="确定要删除角色吗?">删除角色</a>
+```
+
+说明：
+1. ajaxTodo扩展将弹出一个选择框，用户选择“是”后进行操作。
+2. a标签增加 target="ajaxTodo" title="对话框提示内容"
+
+[***源代码参考***](http://www.5admo.cn/public/dwz/js/dwz.ajax.js)
+
+
+### layoutH, 容器高度自适应
+
+[***效果演示***](http://www.5admo.cn)
+
+容器高度自适应, 只要增加扩展属性layoutH=”xx”, 单位是像素.
+LayoutH表示容器内工具栏高度.  浏览器窗口大小改变时容器高度自适应, 但容器内工具栏高度是固定的, 需要告诉js工具栏高度来计算出内容的高度.
+
+示例:
+
+```
+<div class=”layoutBox”>
+	<div layoutH=“150”>内容</div>
+</div>
+```
+注意： layoutH=“150”的高度是根据含有class=”layoutBox”的父容器div动态更新的
+
+源代码参考：
+
+[***initLayout***](http://www.5admo.cn/public/dwz/js/dwz.ui.js)
+
+[***layoutH***](http://www.5admo.cn/public/dwz/js/dwz.core.js)
+
+
+
+
+
+
+
+
+
+
+
+
 
