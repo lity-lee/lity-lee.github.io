@@ -1,6 +1,6 @@
 ---
 layout: post
-category: program
+category: linux
 title:  "一套汇编学习开发环境"
 tags: [linux,nasm,assembly]
 ---
