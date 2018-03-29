@@ -9,6 +9,8 @@ tags: [tools,cmd,linux]
 
 Get that Linux feeling - on Windows
 
+<!-- more -->
+
 What is it?
 Cygwin is:
 

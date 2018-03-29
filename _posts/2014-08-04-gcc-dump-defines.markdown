@@ -10,3 +10,5 @@ tags: [gcc,编译,编程]
 ```
  gcc -dM -E - < /dev/null
 ```
+
+<!-- more -->

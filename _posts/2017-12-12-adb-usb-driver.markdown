@@ -5,6 +5,10 @@ title:  "adb使用和usb通信"
 tags: [adb,usb,driver]
 ---
 
+ADB全称是：Android Debug Bridge，即安卓调试桥，是安卓sdk的一个工具。当然作为一个Android开发者不可能没有听说过adb, 此篇记录些adb工具的使用技巧，且带有探索性的总结adb在linux平台上是如何实现的，及相关adb, adbs, adbd是如何通信的。
+
+<!-- more -->
+
 ## adb使用的技巧
 
 #### 1. 查询当前展示的Activity

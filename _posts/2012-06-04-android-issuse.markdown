@@ -5,6 +5,8 @@ title:  "Android中的一些小问题 "
 tags: [android,编程]
 ---
 
+<!-- more -->
+
 1. LocalActivityManager，销毁子activity时的bug
     ActivityGroup，是用来管理多个Activity的：可以通过LocalActivityManager.startActivity()创建新的Activity；通过LocalActivityManager.destroyActivity()来销毁Activity， 然有时用LocalActivityManager跳转画面，界面会出现莫名其妙的错误，很有可能是这个bug引起的。此bug在api-10之前版本都存在(api-15此bug已经不存在了, 中间版本我未找到源码不确定)。
  在api-8中错误代码是LocalActivityManager.java的383行(Map移除是通过key, 而不是value)。

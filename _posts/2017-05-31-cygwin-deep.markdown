@@ -5,6 +5,10 @@ title:  "cygwin深度使用"
 tags: [cygwin,shell,cmdline]
 ---
 
+Cygwin是一套工具，很强大，强大到本来只能在linux shell中做的事情，现在同样可以在window上面做。 官方说在windows上找到linux的感觉。是的，确实是这样。另外我想把这句话放在前，cygwin不是windows平台的linux虚拟器，而是模拟器。
+
+<!-- more -->
+
 ### 1. Cygwin是类Unix环境，基本上所有的linux命令都可应用
 
 ```

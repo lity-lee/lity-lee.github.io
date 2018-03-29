@@ -5,10 +5,16 @@ title:  "剖析keystore文件"
 tags: [keystore,cygwin,openssl]
 ---
 
+Keytool是一个Java数据证书的管理工具, Keytool将密钥（key）和证书（certificates）存在一个称为keystore的文件中。这句话可能比较官方，那么keystore里到底存放什么呢，它怎么用来rsa加密呢，这里基于剖析的方式从keystore文件中抽取公钥和私钥，并用来加密/解密数据。
+
+<!-- more -->
+
 ## keystore文件是什么
 
 keystore文件是由keytool工具生成的，keytool是一个java数字证书管理工具。
 keystool会将密钥和公钥/证书存放在keystore文件中， 当然管理keystore文件还需要密码，但密码只是用来打开keystore文件的，和密钥和公钥/证书没有关系。
+
+<!-- more -->
 
 在keystore里，包含以下内容(这篇文章关注的)：
 

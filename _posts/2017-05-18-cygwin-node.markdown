@@ -5,11 +5,17 @@ title:  "cygwin安装nodejs环境"
 tags: [cygwin,nodejs]
 ---
 
+Node 是一个基于 Chrome V8 引擎的 JavaScript 运行环境。 Node 使用了一个事件驱动、非阻塞式 I/O 的模型，使其轻量又高效。 Node 的包管理器 npm，是全球最大的开源库生态系统。在类unix平台上安装node或者build node基本上不会遇到太难搞定的问题， 而在cygwin平台上似乎就不那么容易，官方明确说node的源码不能在cygwin上编译。我在工作中不得不使用cygwin环境，在长期探索中找到一种可以在cygwin上运行node的方案，虽然不完美，但也算是一种进步吧。
+
+<!-- more -->
+
 ### cygwin环境中使用nodejs与类Unix和纯windows环境有点复杂
 
 #### 1.无法通过apt-cyg命令或者cygwin的setup.exe来安装
 
 #### 2.无法通过build源代码的形式安装nodejs（官方明确提示不支持）.
+
+<!-- more -->
 
 ### 所以只能通过变相的方式来解决
 

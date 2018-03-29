@@ -5,6 +5,10 @@ title:  "no implementation found in native"
 tags: [gcc,编译,编程]
 ---
 
+在Android开发中，经常会用到jni。其中有次遇到一个看似很简单的问题，却花了很长时间才解决， 解决后也让自己有点哭笑不得。
+
+<!-- more -->
+
 ### 一个"no implementation found in native"问题的调查过程
 1. 前要(一个java类RemoteDesktopJni, 功能实现在c/cxx层)
 

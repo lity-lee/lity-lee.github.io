@@ -5,6 +5,10 @@ title:  "perl正则，unicode匹配"
 tags: [正则,shell,编程]
 ---
 
+正则表达式算是一名程序员的基本功了吧，像perl正则也是比较通用的，基本上很多编程语言都支持，但有时会遇到一些很“奇怪”的问题，而网上很多答案也是千篇一律，不能解惑。
+
+<!-- more -->
+
 把一个文件中的含有中文的行过虑出来， 使用perl正则的命令
 
 ```
@@ -26,9 +30,9 @@ cat strings.xml | grep -P "[\x4e00-\x9fa5]+"
 
 1.Windows系统查找字符， 控制面板->字体， 左边那一栏有一个“查找字符”，点击打开
 
-  ![perl_cn_charater](../assets/2015-01-15_perl_cn_charater.jpg)
+![perl_cn_charater](../assets/2015-01-15_perl_cn_charater.jpg)
 
-  ![perl_cn_charater1](../assets/2015-01-15_perl_cn_charater1.jpg)
+![perl_cn_charater1](../assets/2015-01-15_perl_cn_charater1.jpg)
 
 2.使用微软拼音输入法，安装、切换、配置成unicode码输入，便可输入对应unicode码看到中文字符。
 

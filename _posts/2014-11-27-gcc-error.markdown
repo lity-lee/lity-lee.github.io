@@ -5,6 +5,10 @@ title:  "Make one gcc warning an error"
 tags: [gcc,编译,编程]
 ---
 
+记一个gcc编译参数的技巧，不一定很常用，有时却很实用。
+
+<!-- more -->
+
 ### Make one gcc warning an error
 
 使一个gcc warning(警告)变成一个error(错误), 让编译中断, 好解决问题.
@@ -18,3 +22,5 @@ format的值参考gcc官方文档
 ```
 http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
 ```
+
+<!-- more -->
