@@ -5,6 +5,8 @@ title:  "Android中的一些小问题 "
 tags: [android,编程]
 ---
 
+记录Android开发时，遇到的一些问题和解决方案。
+
 <!-- more -->
 
 1. LocalActivityManager，销毁子activity时的bug

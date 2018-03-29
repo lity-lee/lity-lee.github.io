@@ -5,6 +5,8 @@ title: 'android 布局参数px与dp浅析'
 tags: [android,布局,编程]
 ---
 
+初学习Android时，一定会遇到px和dp的，面试官也一定会问它们有什么区别。经过慢慢的过程中，理解了dp的含义，及android为什么要引入这个概念。
+
 <!-- more -->
 
 ### android 布局参数px与dp浅析
