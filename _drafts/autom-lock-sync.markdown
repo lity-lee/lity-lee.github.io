@@ -1,7 +1,7 @@
 ---
 layout: post
-category: android
-title:  "unity3d在Android平台上三语言互相调用及堆栈访问"
+category: linux
+title:  "追根原子操作、锁、同步实现原理"
 tags: [android,unity3d,c#/java/native]
 ---
 
