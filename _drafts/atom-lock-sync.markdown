@@ -88,7 +88,14 @@ http://www.cnblogs.com/getyoulove/p/3850370.html
 ARM要求中断向量表必须放置在从0地址开始，连续8×4字节的空间内(ARM720T和ARM9、ARM10也支持从0xFFFF0000开始的高地址向量表)，各异常和中断向量在向量表中的位置如下
 
 
+#### kernel init
 
+
+start_kernel
+setup_arch
+paging_init
+devicemaps_init
+early_trap_init
 
 
 
