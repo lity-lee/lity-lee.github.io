@@ -120,6 +120,8 @@ __futex_syscall3(futex_arm.S)
 
 #### 5. kernel init
 
+#### 6.  do_timer_interrupt
+
 
 
 
