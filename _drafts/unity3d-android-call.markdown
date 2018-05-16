@@ -1,22 +1,61 @@
 ---
 layout: post
 category: android
-title:  "unity3d在Android平台上三语言互相调用及堆栈访问"
+title:  "Android上开发unity3d各语言的互相调用"
 tags: [android,unity3d,c#/java/native]
 ---
 
+android平台上开发app, 使用java语言，这算是“最简单”的模式了，简单是因为只使用一种语言，不存在语言互相调用的问题。android平台上开发cocos2dx游戏，就需要两种语言了，java和c/c++; android平台上开发unity3d游戏，可能就需要三种语言了，java、c/c++、c#， 是最“复杂”的模式了。
+
+
+
+
+
+
+现就三种语言如何相互调用、堆栈如何访问、对象可否传递问题
+
+
+
+
+不过支持使用native语言来开发，如cocos2dx游戏开发，这样
+
 在Android平台上开发unity3d游戏，有三种不同的编程语言java, c/c++, c#，有时免不了三种语言之前的互相调用。比如现在有一个已经完成某一功能的SDK, 游戏开发者需要调用此SDK，SDK被调用后完成功能后传递结果到C#，表面上看只涉及c#调用java, java调用c#, 并没有c/c++语言什么事儿，然而好像游戏开发人员需要调用java语言写好的SDK, java
-很久以前我就想学习一下汇编语言，或者写个hello world什么的，但发现很难“找齐”一个完整的开发流程，后来也是在无意中（自己多年坚持下）找到的。在这个环境下，你可以尽情地“玩耍”，像学习c/c++语言一样来快速地学习汇编，c/c++语言这样的学习环境是很容易找到的，而汇编语言的就不那么容易了。所以这篇仅于记录，共勉有同等需求的人。
 
 <!-- more -->
 
-* 操作系统：linux(ubuntu)
-* 编辑器：sublime (nasm 插件)
-* 汇编器：nasm
-* 链接器：ld
-* 调试工具：gdb
 
-#### 1. c#调用cxx
+及堆栈访问
+
+### c#调用c/c++
+
+c#语言运行在.net环境中，java运行在jvm中，应该有一些类似的地方，它们在访问本地代码(native code)的功能上，都是语言本身提供的功能。
+
+c#语言：在函数定义时在前面增加“extern”关键字，调用c/c++的函数只能是 static。
+
+```
+		[DllImport("paysdk_bridge", EntryPoint = "add")]
+		private static extern int add(int a, int b);
+```
+
+paysdk_bridge是库名称, 不要加前缀lib和后缀so; EntryPoint定义的是native的函数名。
+
+c/c++语言：编译时保证函数不被移除或者更名，在c++环境下特别注意，在函数声明时可以这样：
+
+```
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int add(int a, int b);
+
+#ifdef __cplusplus
+}
+#endif
+```
+
+
+
+这个应该是语言本身的功能，
 
 
 
