@@ -38,13 +38,16 @@ for(int i=0; i<data.length; i++)
 	int min = i;
 	for(int j=i+1; j<data.length; j++)
 	{
-		if(data[j] < min)
+		if(data[j] < data[min])
 		{
-			min = i;
+			min = j;
 		}else
 		{
 			// don't handle
 		}
+	}
+	if (min != i) 
+	{
 		int temp = data[i];
 		data[i] = data[j];
 		data[j] = temp;
@@ -60,7 +63,7 @@ for(int i=1; i<data.length; i++)
 {
 	int insert = data[i];
 	int moveItem = i;
-	while(data[moveItem > 0 && data[moveItem-1] > insert)
+	while(data[moveItem] > 0 && data[moveItem-1] > insert)
 	{
 		data[moveItem] = data[moveItem-1];
 		moveItem--;
