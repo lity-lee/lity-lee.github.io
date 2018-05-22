@@ -49,6 +49,9 @@ The entry point to Linux kernel modules is an init function that is registered w
 
 ### 内核内码
 
+从start_kernel开始查找与异常相关的代码，其调用栈图如下：
+
+![2018-05-22_kernel_exception_stack](../assets/2018-05-22_kernel_exception_stack.png)
 
 
 
