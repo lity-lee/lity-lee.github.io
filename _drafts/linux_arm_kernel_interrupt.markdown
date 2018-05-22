@@ -11,12 +11,12 @@ tags: [arm,linux,kernel]
 
 ### arm平台中断向量表
 
-arm处理器在执行指令时，突然产生中断，它将会跳转到指定位置开始执行， 这个指定位置就叫中断向量。
-中断向量存放的是跳转到中断处理程序入口的跳转指令。中断向量表就是所有中断向量的集合，在程序上可以认为是首地址，中断向量表也叫异常向量表，下文中将不会区分。
+arm处理器在执行指令时，突然产生了中断，它将会跳转到指定位置开始执行， 这个指定位置就叫中断向量。
+中断向量存放的是跳转到中断处理程序入口的跳转指令。中断向量表就是所有中断向量的集合，在程序上可以认为是首地址，中断向量表也叫异常向量表，下文中将不做区分。
 
-在ARM7,ARM9/10等处理器，中断异常向量表可以存放在以 0x00000000或0xffff00000其始的地址。默认是以零地址开始存放的。cortex-A系列的处理器可以将异常向量表放在任何位置，那ARM处理收到异常后，它怎么知道应该将pc的值修改为多少呢? 这就需要我们通过协处理指令告诉它了。
+在ARM7,ARM9/10等处理器，中断异常向量表可以存放在以 0x00000000或0xffff00000其始的地址。默认是以零地址开始存放的；cortex-A系列的处理器可以将异常向量表放在任何位置，那处理器收到异常后，它怎么知道应该将pc的值修改为多少呢? 这就需要我们通过协处理指令告诉它了。
 
-上面这段话的正确性, 可参考[***arm处理器官方文档***](http://infocenter.arm.com/help/index.jsp), 下面截图也来自官方文档。
+上面这段话的正确性如何验证呢，当然最权威的莫过于官方文档了。参考[***arm处理器官方文档***](http://infocenter.arm.com/help/index.jsp), 下面截图也来自官方文档。
 
 ARM7异常向量表如下：
 
@@ -51,41 +51,20 @@ The entry point to Linux kernel modules is an init function that is registered w
 
 从start_kernel开始查找与异常相关的代码，其调用栈图如下：
 
-![2018-05-22_kernel_exception_stack](../assets/2018-05-22_kernel_exception_stack.png)
+![kernel_exception_stack](../assets/2018-05-22_kernel_exception_stack.png)
 
+early_trap_init函数的实现
 
+![early_trap_init](../assets/2018-05-22_early_trap_init.png)
 
-#### kernel init
+从885,886行，可以看到是内存复制, “__vectors_start”就是硬中断向量表，在entry-armv.S中定义:
 
+![_vectors_start](../assets/2018-05-22_vectors_start.png)
 
-start_kernel
-setup_arch
-paging_init
-devicemaps_init
-early_trap_init
+所以以后，查看硬中断处理程序，都可以从这里开始，“__vectors_start”。另外886行复制了“__stubs_start”，　“__stubs_start”也定义在entry-armv.S中：
 
+![kernel_exception_swi](../assets/2018-05-22_kernel_exception_swi.png)
 
+结合"____vectors_start"的定义，可以得出"vector_swi"是软中断swi指令的处理程序。arm平台linux系统调用都是通过软中断指令实现的，那么“vector_swi”也就是系统调用内核态代码的入口了。
 
-#### 2. 线程锁
-
-
-pthread_mutex_lock
-pthread_mutex_lock_impl
-_normal_lock
-__bionic_cmpxchg
-
-strexeq 独占工
-
-
-#### 3. 线程的分支－等待
-
-__futex_wait_ex
-__futex_syscall4
-__futex_syscall3(futex_arm.S)
-
-#### 4. 系统调用
-
-#### 5. kernel init
-
-#### 6.  do_timer_interrupt
 
