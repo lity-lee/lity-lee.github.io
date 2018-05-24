@@ -69,10 +69,203 @@ early_trap_init函数的实现
 
 ### arm平台(at91)时钟中断
 
-从上面可以知道可以知道irq中断的中断处理程序入口是: vector_irq。展开宏vector_stub，可以看出内核态中断处理程序下一步将执行: __irq_svc。之后一步步分发到中断处理程序中，不一一赘述，看下图：
+#### 1.irq中断处理过程
 
+从上面可以知道可以知道irq中断的中断处理程序入口是: vector_irq。展开宏vector_stub，可以看出内核态中断处理程序下一步将执行: __irq_svc。之后一步步分发到中断处理程序，不一一赘述，看下图：
 
+![irq_exception_callback](../assets/2018-05-24_irq_exception_callback.png)
 
+第8个消息“generic_handle_irq”的实现代码：
+
+```
+int generic_handle_irq(unsigned int irq)
+{
+    struct irq_desc *desc = irq_to_desc(irq);
+
+    if (!desc)
+        return -EINVAL;
+    generic_handle_irq_desc(irq, desc);
+    return 0;
+}
+```
+
+第9个消息“generic_handle_irq_desc”
+
+```
+static inline void generic_handle_irq_desc(unsigned int irq, struct irq_desc *desc)
+{
+    desc->handle_irq(irq, desc);
+}
+```
+
+代码大概含义是：通过中断号找到中断描述信息irq_desc类型的指针，然后调用其handle_irq函数。结构体irq_desc里有一个action字段，它是一个链表，记录着中断回调列表，注释上写“IRQ action list”。那么我们基本上可以猜到，注册中断处理程序的过程也就是向action字段中增加节点了。
+
+#### 2.注册时钟中断
+
+从start_kernel找起，调用图如下：
+
+![register_irq](../assets/2018-05-24_register_irq.png)
+
+第4个消息“init_time”，函数代码：
+
+```
+void __init time_init(void)
+{
+    if (machine_desc->init_time) {
+        machine_desc->init_time();
+    } else {
+#ifdef CONFIG_COMMON_CLK
+        of_clk_init(NULL);
+#endif
+        clocksource_of_init();
+    }
+}
+```
+
+可以知道它最终是调用machine_desc->init_time()来注册时钟中断的。那么应该先找到machine_desc在哪里初化的，依然在上面的调用图中，第3个消息返回的值就是machine_desc。setup_machine_tags函数的部分代码：
+
+```
+const struct machine_desc * __init
+setup_machine_tags(phys_addr_t __atags_pointer, unsigned int machine_nr)
+{
+    struct tag *tags = (struct tag *)&default_tags;
+    const struct machine_desc *mdesc = NULL, *p;
+    char *from = default_command_line;
+
+    default_tags.mem.start = PHYS_OFFSET;
+
+    /*
+     * locate machine in the list of supported machines.
+     */
+    for_each_machine_desc(p)
+        if (machine_nr == p->nr) {
+            printk("Machine: %s\n", p->name);
+            mdesc = p;
+            break;
+        }
+
+    // do something...
+
+    return mdesc;
+}
+```
+
+看到代码中的宏for_each_machine_desc， 找出其定义：
+
+```
+/*
+ * Machine type table - also only accessible during boot
+ */
+extern const struct machine_desc __arch_info_begin[], __arch_info_end[];
+#define for_each_machine_desc(p)            \
+    for (p = __arch_info_begin; p < __arch_info_end; p++)
+
+/*
+ * Set of macros to define architecture features.  This is built into
+ * a table by the linker.
+ */
+#define MACHINE_START(_type,_name)          \
+static const struct machine_desc __mach_desc_##_type    \
+ __used                         \
+ __attribute__((__section__(".arch.info.init"))) = {    \
+    .nr     = MACH_TYPE_##_type,        \
+    .name       = _name,
+
+#define MACHINE_END             \
+};
+```
+
+可以明白，machine_desc就是通过参数machine_nr在__arch_info_begin到__arch_info_end遍历中查找，那么__arch_info_begin在哪里呢？ 在vmlinux.lds.S文件里:
+
+![arch_info_begin](../assets/2018-05-24_arch_info_begin.png)
+
+可以看出在编译时把标识为.arch.info.init的section定义全放在__arch_info_begin和__arch_info_end之间，这里就包括mach-at91/board-eb01.c文件中的定义：
+
+```
+MACHINE_START(AT91EB01, "Atmel AT91 EB01")
+    /* Maintainer: Greg Ungerer <gerg@snapgear.com> */
+    .init_time  = at91x40_timer_init,
+    .handle_irq = at91_aic_handle_irq,
+    .init_early = at91eb01_init_early,
+    .init_irq   = at91eb01_init_irq,
+MACHINE_END
+```
+
+MACHINE_START宏在上面已经看到了，展开它就明了， 在arm at91处理器上machine_desc就是这时定义的结构体。串联起来，可以得出注册时钟中断的代码machine_desc->init_time()的执行就是执行at91x40_timer_init函数。下面再把调用图完整绘制一遍：
+
+![register_irq_all](../assets/2018-05-24_register_irq_all.png)
+
+第7个消息“__setup_irq”的函数实现代码：
+```
+/*
+ * Internal function to register an irqaction - typically used to
+ * allocate special interrupts that are part of the architecture.
+ */
+static int
+__setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
+{
+    struct irqaction *old, **old_ptr;
+    unsigned long flags, thread_mask = 0;
+    int ret, nested, shared = 0;
+    cpumask_var_t mask;
+
+    // do something...
+    /*
+     * The following block of code has to be executed atomically
+     */
+    raw_spin_lock_irqsave(&desc->lock, flags);
+    old_ptr = &desc->action;
+    old = *old_ptr;
+    if (old) {
+        /*
+         * Can't share interrupts unless both agree to and are
+         * the same type (level, edge, polarity). So both flag
+         * fields must have IRQF_SHARED set and the bits which
+         * set the trigger type must match. Also all must
+         * agree on ONESHOT.
+         */
+        if (!((old->flags & new->flags) & IRQF_SHARED) ||
+            ((old->flags ^ new->flags) & IRQF_TRIGGER_MASK) ||
+            ((old->flags ^ new->flags) & IRQF_ONESHOT))
+            goto mismatch;
+
+        /* All handlers must agree on per-cpuness */
+        if ((old->flags & IRQF_PERCPU) !=
+            (new->flags & IRQF_PERCPU))
+            goto mismatch;
+
+        /* add new interrupt at end of irq queue */
+        do {
+            /*
+             * Or all existing action->thread_mask bits,
+             * so we can find the next zero bit for this
+             * new action.
+             */
+            thread_mask |= old->thread_mask;
+            old_ptr = &old->next;
+            old = *old_ptr;
+        } while (old);
+        shared = 1;
+    }
+
+    // do something...
+    return ret;
+}
+```
+
+可以看出它就是向中断回调列表中追加回调。至此，第1部分中分析的中断回调过程，和第2部分时钟中断处理程序的注册过程相互关连、印证。时钟中断有一个重要的工作，就是进程调度，会在下面讲述。
+
+#### 3.时钟中断引起进程 调度
+
+看第2部分注册过程中第5个消息“at91x40_timer_init”， 看下图：
+
+![at91x40_timer_init](../assets/2018-05-24_at91x40_timer_init.png)
+
+从82、62行，可以知道时钟中断产生后，将调用“at91x40_timer_interrupt”函数，调用图：
+
+![scheduler_tick](../assets/2018-05-24_scheduler_tick.png)
+
+最终调到scheduler_tick函数， 从函数的注释和大概内容可以知道它会引起进程调度，此篇主要“分析”硬中断和时钟中断，对进程调度就不多说了。
 
 
 
