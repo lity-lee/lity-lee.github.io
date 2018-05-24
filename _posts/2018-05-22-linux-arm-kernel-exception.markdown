@@ -67,4 +67,13 @@ early_trap_init函数的实现
 
 结合"____vectors_start"的定义，可以得出"vector_swi"是软中断swi指令的处理程序。arm平台linux系统调用都是通过软中断指令实现的，那么“vector_swi”也就是系统调用内核态代码的入口了。
 
+### arm平台(at91)时钟中断
+
+从上面可以知道可以知道irq中断的中断处理程序入口是: vector_irq。展开宏vector_stub，可以看出内核态中断处理程序下一步将执行: __irq_svc。之后一步步分发到中断处理程序中，不一一赘述，看下图：
+
+
+
+
+
+
 
