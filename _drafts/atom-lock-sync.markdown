@@ -5,13 +5,13 @@ title:  "追根原子操作、锁、同步实现原理"
 tags: [java,kernel,asm]
 ---
 
-在多线程环境下，i++并不安全。使用两个线程同时操作i++ 1w万次，可能得出i的值并不是2w。想要安全的使用i++, 在java上可以使用synchronized关键字， c/c++语言中可以使用pthread_mutex_lock。c的sleep函数也同样让我着迷，它可以让线程“暂停”，想不通它是怎么做到的。但感觉 它们应该是有共性的，抢占一个被占用的锁时是要出现“等待”的。
+在多线程环境下，i++并不安全。使用两个线程同时操作i++ 1w万次，可能得出i的值并不是2w。想要安全的使用i++, 在java上可以使用synchronized关键字， c/c++语言中可以使用pthread_mutex_lock。c的sleep函数也同样让我着迷，它可以让线程“暂停”，想不通它是怎么做到的。但感觉它们应该有共性的，抢占一个被占用的锁时是要出现“等待”的。
 
 <!-- more -->
 
 ### 1. 原子操作i++
 
-以前维护过一个c/c++项目，它实现了一套的引用计数对象来管理内存。跟踪它在增加引用计数时调用了android_atomic_inc，android_atomic_inc又调用了android_atomic_add，android_atomic_add函数是内嵌汇编实现的：
+以前维护过一个c/c++项目，它实现了一套的引用计数来管理对象。跟踪它在增加引用计数时调用了android_atomic_inc，android_atomic_inc又调用了android_atomic_add，android_atomic_add函数是内嵌汇编实现的：
 
 ```
 extern ANDROID_ATOMIC_INLINE
@@ -127,11 +127,11 @@ SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
 
 ![sleep_kernel](../assets/2018-06-14_sleep_kernel.png)
 
-最终调到context_switch, context_switch函数的调用会引起进程调度，就是cpu切换到其它进程去执行了，当前进程就“失去”cpu了，这里会涉及时间片的概念。所以sleep函数是不占用cpu资源的，对调用者来说它是“耗时”。我们知道sleep函数在“暂停”指定时间后会继续执行后面的代码，现在cpu切换到其它进程去执行了，那cpu什么时候再切换回来呢！
+最终调到context_switch, context_switch函数的调用会引起进程调度，就是cpu切换到其它进程去执行了，当前进程就“失去”cpu了，这里会涉及时间片的概念。所以sleep函数是不占用cpu资源的，对调用者来说它是“耗时”的。我们知道sleep函数在“暂停”指定时间后会继续执行后面的代码，现在cpu切换到其它进程去执行了，那cpu什么时候再切换回来呢！
 
 ### 3. 线程锁
 
-c/c++线程锁pthread_mutex_lock，可以达到同步的效果。而锁是软件层抽象出来的概念，它是如何实现的。在使用者的角度可以分为两段，第一段是锁状态的更改;第二段是等待锁释放的过程。
+c线程锁pthread_mutex_lock，也可以达到同步的效果。而锁是软件层抽象出来的概念，它是如何实现的。在使用者的角度可以分为两段，第一段是锁状态的更改;第二段是等待锁的释放。
 
 先说第一段，锁状态的更改。下面是调用栈：
 
@@ -204,7 +204,7 @@ END(__futex_syscall4)
 
 ![futex_kernel](../assets/2018-06-15_futex_kernel.png)
 
-是不是从消息5开始就很熟悉啦，和上面sleep内核态代码相同，最终都调用到了context_switch, 引起进程调度。
+是不是从消息5开始就很熟悉啦，和上面sleep内核态代码相同，最终都调到了context_switch, 引起进程调度。
 
 ### synchronized 关键字
 
@@ -340,7 +340,7 @@ END(__futex_syscall4)
 
 查看smali代码发现synchronized代码段前后插入monitor-enter, monitor-exit指令，在.line 214、.line 216、.line 227处。
 
-之后严谨的思路应该是dalvik怎样解释monitor-enter和monitor-exit指令，但这会有很多东西要说，且不是本文描述的重点。我们直接从delvik解释字节码时，遇到monitor-enter和monitor-exit指令做了什么事情开始说起，其实每条字节码指令都会对应一个c/cpp函数，delvik遇到这个字节码时就会执行这个函数。这些指令每条分别对应一个cpp文件， 这些文件存放在“/dalvik/vm/mterp/c/”目录下。查看一下monitor-enter指令对应的实现函数：
+之后严谨的思路是去了解dalvik怎样解释monitor-enter和monitor-exit指令，但这会有很多东西要说，且不是本文描述的重点。我们直接从delvik解释字节码时，遇到monitor-enter和monitor-exit指令做了什么事情开始说起，其实每条字节码指令都会对应一个c/cpp函数，delvik遇到这个字节码时就会执行这个函数。这些指令每条分别对应一个cpp文件， 这些文件存放在“/dalvik/vm/mterp/c/”目录下。查看一下monitor-enter指令对应的实现函数：
 
 ```
 HANDLE_OPCODE(OP_MONITOR_ENTER /*vAA*/)
@@ -361,7 +361,7 @@ HANDLE_OPCODE(OP_MONITOR_ENTER /*vAA*/)
 OP_END
 ```
 
-追踪一下dvmLockObject函数。这里同样像c线程锁一样分为两段，第一是锁状态的更改，调用栈：
+追踪一下dvmLockObject函数。这里同样像c线程锁一样分为两段，第一段是锁状态的更改，调用栈：
 
 ```
 dvmLockObject
@@ -395,14 +395,14 @@ int android_atomic_cas(int32_t old_value, int32_t new_value,
 
 看到这里，是不是很熟悉。和上面原子操作及c线程锁一样，他们都是使用ldrex和strex来完成的，独占式读写arm指令。
 
-第二段是锁被其它线程占用了，当然线程会等待锁的释放，追踪代码调用栈：
+第二段是等待锁的释放，追踪代码调用栈：
 
 ```
 dvmLockObject
 nanosleep
 ```
 
-dvmLockObject函数代码太长，分析起来也很费劲，这里摘出主要实现代码截图，其实也包括第一段的代码：
+dvmLockObject函数代码太长，分析起来也很费劲，这里摘出主要实现代码，其实也包括第一段的代码：
 
 ![sync_dvm_lock](../assets/2018-06-15_sync_dvm_lock.png)
 
