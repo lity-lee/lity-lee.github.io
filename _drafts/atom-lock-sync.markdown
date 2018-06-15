@@ -9,28 +9,6 @@ tags: [java,kernel,asm]
 
 <!-- more -->
 
-
-
-时候很神奇吧，我一直觉得
-可一直对它们的实现很着迷。
-
-站在使用的角度已经够了，可我很想知道它是怎么实现的嘛
-
-
-以前学习编程时，想实现计数器count功能，了解到i++在多线程共享环境下是不安全的，
-
-
-
-锁是一个软件层抽象出来的概念，想了解它的“基础”，是怎么实现的。
-
-同步应该是java的概念
-
-当年学习c语言时，一直不太理解i++是如何实现原子操作的
-
-
-
-
-
 ### 1. 原子操作i++
 
 以前在维护过一个c/c++项目，它实现了一套的引用计数对象来管理内存。跟踪它在增加引用计数时调用了android_atomic_inc，然后又调用了android_atomic_add，android_atomic_add函数是内嵌汇编实现的：
@@ -127,29 +105,111 @@ ENTRY(nanosleep)
 END(nanosleep)
 ```
 
-
 sleep内核态代码：
 
+```
+SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
+        struct timespec __user *, rmtp)
+{
+    struct timespec tu;
+
+    if (copy_from_user(&tu, rqtp, sizeof(tu)))
+        return -EFAULT;
+
+    if (!timespec_valid(&tu))
+        return -EINVAL;
+
+    return hrtimer_nanosleep(&tu, rmtp, HRTIMER_MODE_REL, CLOCK_MONOTONIC);
+}
+```
+
+完整的调用栈如下：
+
+![sleep_kernel](../assets/2018-06-14_sleep_kernel.png)
+
+最终调到context_switch, context_switch函数的调用会引起进程调度，就是cpu切换到其它进程去执行了，当前进程就“失去”cpu了，这里会涉及时间片的概念。所以sleep函数是不占用cpu资源的，对调用者来说它是“耗时”。我们知道sleep函数在“暂停”指定时间后会继续执行后面的代码，现在cpu切换到其它进程去执行了，那cpu什么时候再切换回来呢！
+
+### 2. 线程锁
+
+c/c++ 线程锁pthread_mutex_lock， 可以达到同步的效果。而锁是软件层抽象出来的概念，它是如何实现的。在使用者的角度可以分为两部分，一是锁状态的更改; 二是获取释放锁的过程。
 
 
-#### 2. 线程锁
+先说第一部，锁状态的更改。下面是调用栈：
 
-
+```
 pthread_mutex_lock
 pthread_mutex_lock_impl
-_normal_lock
 __bionic_cmpxchg
+```
 
-strexeq 独占工
+__bionic_cmpxchg函数在bionic_atomic_arm.h文件中，实现代码：
 
+```
+/* Compare-and-swap, without any explicit barriers. Note that this functions
+ * returns 0 on success, and 1 on failure. The opposite convention is typically
+ * used on other platforms.
+ */
+__ATOMIC_INLINE__ int
+__bionic_cmpxchg(int32_t old_value, int32_t new_value, volatile int32_t* ptr)
+{
+    int32_t prev, status;
+    do {
+        __asm__ __volatile__ (
+            __ATOMIC_SWITCH_TO_ARM
+            "ldrex %0, [%3]\n"
+            "mov %1, #0\n"
+            "teq %0, %4\n"
+#ifdef __thumb2__
+            "it eq\n"
+#endif
+            "strexeq %1, %5, [%3]"
+            __ATOMIC_SWITCH_TO_THUMB
+            : "=&r" (prev), "=&r" (status), "+m"(*ptr)
+            : "r" (ptr), "Ir" (old_value), "r" (new_value)
+            : __ATOMIC_CLOBBERS "cc");
+    } while (__builtin_expect(status != 0, 0));
+    return prev != old_value;
+}
+```
 
-#### 3. 线程的分支－等待
+这段代码与上面原子操作i++部分相似，这里不多解释了，核心还是ldrex和strex, 独占式读写操作。
 
+第二部分，锁释放的等待。这将分为两阶段，一是用户态态部分，二是内核态部分。用户态部分的调用栈：
+
+```
+pthread_mutex_lock
+pthread_mutex_lock_impl
 __futex_wait_ex
 __futex_syscall4
-__futex_syscall3(futex_arm.S)
+__futex_syscall3
+```
 
-#### synchronized 关键字
+摘出主要代码：
+```
+// __futex_syscall3(*ftx, op, val)
+ENTRY(__futex_syscall3)
+    mov     ip, r7
+    ldr     r7, =__NR_futex
+    swi     #0
+    mov     r7, ip
+    bx      lr
+END(__futex_syscall3)
+
+// __futex_syscall4(*ftx, op, val, *timespec)
+ENTRY(__futex_syscall4)
+    b __futex_syscall3
+END(__futex_syscall4)
+```
+
+可以知道最终调用的系统调用是futex, 但使用[arm平台linux系统调用]({{ site.baseurl }}{% post_url 2018-05-11-arm-linux-kernel-syscall %})提供的方法找内核代码，这里的参数个数不太明确，但模糊查找可以确定是SYSCALL_DEFINE6(futex。内核态栈调用图：
+
+![futex_kernel](../assets/2018-06-15_futex_kernel.png)
+
+是不是第消息5就很熟悉啦，和上面sleep内核态代码相同，最终都调用到了context_switch, 引用进程调度，不“占用”cpu。
+
+### synchronized 关键字
+
+既然我们了解了c/c++的锁是如何实现的，那么java的锁呢？这里主要探讨java关键字synchronized。
 
 反编译后， 发现在 代码段前后插入 monitor-enter, monitor-exit
 
