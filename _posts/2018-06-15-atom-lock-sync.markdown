@@ -54,9 +54,9 @@ int32_t android_atomic_add(int32_t increment, volatile int32_t *ptr)
 
 这很好理解，关键是怎样达到原子操作（线程安全）呢，就是ldrex和strex指令的功能了，两条指令的官方文档：
 
-![ldrex_doc](../assets/2018-05-25_ldrex_doc.png)
+![ldrex_doc]({{ site.url }}/assets/2018-05-25_ldrex_doc.png)
 
-![ldrex_doc](../assets/2018-05-25_strex_doc.png)
+![strex_doc]({{ site.url }}/assets/2018-05-25_strex_doc.png)
 
 主要看Operation栏。指令ldrex在取值时会在对应内存上做一个exclusive
 access标记;指令strex存值时有这个标记就会存值成功，返回0，没有这个标记就会存值失败，返回1。这个标记就是独占式访问标记，是针对cpu的，多核环境下也没有问题。
@@ -125,7 +125,7 @@ SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
 
 完整的调用栈如下：
 
-![sleep_kernel](../assets/2018-06-14_sleep_kernel.png)
+![sleep_kernel]({{ site.url }}/assets/2018-06-14_sleep_kernel.png)
 
 最终调到context_switch, context_switch函数的调用会引起进程调度，就是cpu切换到其它进程去执行了，当前进程就“失去”cpu了，这里会涉及时间片的概念。所以sleep函数是不占用cpu资源的，对调用者来说它是“耗时”的。我们知道sleep函数在“暂停”指定时间后会继续执行后面的代码，现在cpu切换到其它进程去执行了，那cpu什么时候再切换回来呢！
 
@@ -202,7 +202,7 @@ END(__futex_syscall4)
 
 可以知道最终调用的系统调用是futex, 但使用[arm平台linux系统调用]({{ site.baseurl }}{% post_url 2018-05-11-arm-linux-kernel-syscall %})提供的方法找内核代码，这里的参数个数不太明确，但模糊查找可以确定是SYSCALL_DEFINE6(futex。内核态栈调用图：
 
-![futex_kernel](../assets/2018-06-15_futex_kernel.png)
+![futex_kernel]({{ site.url }}/assets/2018-06-15_futex_kernel.png)
 
 是不是从消息5开始就很熟悉啦，和上面sleep内核态代码相同，最终都调到了context_switch, 引起进程调度。
 
@@ -404,7 +404,7 @@ nanosleep
 
 dvmLockObject函数代码太长，分析起来也很费劲，这里摘出主要实现代码，其实也包括第一段的代码：
 
-![sync_dvm_lock](../assets/2018-06-15_sync_dvm_lock.png)
+![sync_dvm_lock]({{ site.url }}/assets/2018-06-15_sync_dvm_lock.png)
 
 这里是不是也很熟悉，因为它调用了nanosleep系统调用，和sleep代码的实现是一样的。
 
