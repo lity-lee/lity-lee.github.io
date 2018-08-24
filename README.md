@@ -15,3 +15,10 @@ Jekyll博客模板
     See the License for the specific language governing permissions and
     limitations under the License.
 
+## jekyll cmd
+
+```
+jekyll clean
+jekyll b --drafts --incremental --future
+jekyll s --drafts --incremental --future --watch
+```
