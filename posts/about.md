@@ -17,6 +17,6 @@ GitHub: <https://github.com/lity-lee>
 
 ### Contract
 
-Email: lity-lee@163.com  
+Email: lity_lee@163.com  
 QQ: 396888158  
 tel: 18721861836  
