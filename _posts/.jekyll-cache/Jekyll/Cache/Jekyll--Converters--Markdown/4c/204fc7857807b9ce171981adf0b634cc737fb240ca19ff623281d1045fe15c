@@ -1,0 +1,85 @@
+I"�
+<p>Cygwin是一套工具，很强大，强大到本来只能在linux shell中做的事情，现在同样可以在window上面做。 官方说在windows上找到linux的感觉。是的，确实是这样。另外我想把这句话放在前，cygwin不是windows平台的linux虚拟器，而是模拟器。</p>
+
+<!-- more -->
+
+<h3 id="1-cygwin是类unix环境基本上所有的linux命令都可应用">1. Cygwin是类Unix环境，基本上所有的linux命令都可应用</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>grep, sed, cat, file, iconv, xargs, head, tail
+wc, hexdump, xxd
+nslookup, dig, ipconfig, nc
+ssh, rsync, scp, sftp
+perl, awk, python, ruby, node, pip, gem, npm
+urlencode, urldecode
+apt-cyg, cygpath
+df,
+gcc, nm, objdump, ldd, make, automake
+ffmpeg, lame, openssl, pandoc
+mysql, sqlite, php, nginx, redis
+adb, aapt, gradle, ant, apktool, jarsigner
+svn, git
+find, locate(contab), which, 
+sshd, cron, cygrunsrv
+</code></pre></div></div>
+
+<h3 id="2-shell的一些坑">2. Shell的一些坑</h3>
+
+<h4 id="21-文件名中含有空格的处理">2.1 文件名中含有空格的处理</h4>
+
+<p>1.命令行中可使用”\ “来处理，即转义的方式</p>
+
+<p>2.sh脚本中变量中含有空格, 使用”$var”来处理</p>
+
+<h4 id="22-通配符和正则表达式">2.2 通配符和正则表达式</h4>
+
+<p>1.先是通配符，再是正则表达式</p>
+
+<p>2.通配符相当于在命令后面，加上符合通配的文件名</p>
+
+<p>3.通配符可以用sh -x来查看</p>
+
+<p>4.可以加””, 让通配效果消失</p>
+
+<p>5.通配符是shell处理的; 正则表达式是命令处理的</p>
+
+<p>6.通配符和正则表达式都需要命令支持</p>
+
+<h4 id="23-乱码">2.3 乱码</h4>
+
+<p>1.可以使用file查看文件编码</p>
+
+<p>2.使用iconv -f gbk -t utf-8基本能解决问题</p>
+
+<p>3.有时还需要使用重写向， 2&gt;&amp;1</p>
+
+<p>4.理论是无法识别出一个文件的确切编码的</p>
+
+<h4 id="24-路径问题">2.4 路径问题</h4>
+
+<p>1.cygwin可以使用任何windows命令/exe</p>
+
+<p>2.使用windows命令时, 绝对路径使用 d:/temp模式, 如adb</p>
+
+<p>3.node的环境变量NODE_PATH, 也要使用windows路径模式</p>
+
+<p>4.使用cygpath可进行切换</p>
+
+<h3 id="3-守护进程-服务">3. 守护进程 (服务)</h3>
+
+<h4 id="31-sshd-terminal-server">3.1 sshd (terminal server)</h4>
+
+<p>1.在管理员模式下运行cygwin terminal</p>
+
+<p>2.运行 ssh-host-config 命令, step-step</p>
+
+<p>3.使用ssh user@localhost 验证, 注意界面与linux不同</p>
+
+<h4 id="32-crond-timer-server">3.2 crond (timer server)</h4>
+
+<p>1.在管理员模式下运行cygwin terminal</p>
+
+<p>2.运行 cron-config 命令, step-step</p>
+
+<p>3.使用crontab验证</p>
+
+:ET

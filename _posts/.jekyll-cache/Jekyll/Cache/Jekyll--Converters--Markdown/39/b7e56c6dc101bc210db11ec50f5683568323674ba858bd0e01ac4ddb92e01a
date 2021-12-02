@@ -1,0 +1,151 @@
+I"jV<p>模拟迅雷多线程任务下载资源。实现后才发现，这真的是多线程下载，而迅雷不仅是多线程下载，人家是多资源多线程下载，说明了就是它同时向不同的url下载同一下文件，当然有校验过程了。所以发现有的资源使用浏览器、wget、curl不能下载，而用迅雷可以下载，不要奇怪了。</p>
+
+<!-- more -->
+
+<h3 id="java多线程下载http协议的资源">java多线程下载http协议的资源</h3>
+
+<ol>
+  <li>
+    <p>文件输出流FileOutStream，可能是之前学习数据库或者学习c语言对文件操作的原因，一直觉得一个文件只能被一个对象或指针作写操作。而java语言上针对同一个文件可以有多个输出流，每个输出流相对其它输出流是相对独立的，即每个输出流对文件操作后都记录当前的位置，为此对象下次对文件操作提供依据。当然，文件最终的内容，指某段数据，一定是有输出流中最后对此段数据写操作的输出流写入的内容。</p>
+  </li>
+  <li>
+    <p>此小程序设计的思路是，在main线程中请求http资源，获取出来长度，然后用RandomAccessFile对象创建本地文件，包括文件的大小，这时一个空的文件就创建了出来。由获取出来的总长度平均分成5份，最后的一份要把余下来的加上。这5份分别由5个线程负责请求并下载保存。http协议可以只请求文件的一部分。</p>
+  </li>
+  <li>
+    <p>尽管http资源在网上很多，很容易找到，但找到无效的资源链接更容易，一个无效的链接用写好的程序测试时会超时。这时，如果你想用迅雷下载一下来测证此资源是否有效，很多情况下是能下载的，这是因为迅雷使用了替代资源，可以在使用迅雷下载时勾选“只从原始地址下载”来验证资源确实有效。</p>
+  </li>
+  <li>
+    <p>用到了多线程问题，不得不说线程对象Thread是不能够复用的，就是当一个线程对象调用了start()方法后，无论是否有线程已启动，都不能再用这个线程对象启动新的线程，而线程对象也没有类似reset()这样的方法。</p>
+  </li>
+  <li>
+    <p>下载完成后，怎样确保保存的这个文件就是网上那个资源文件呢。用迅雷或其实下载工具下载此资源，然后对这两个文件比对当，当然你可以自己写程序来比对。有一简便的方法是下载一个md5算法工具，分别计算出这两个文件的md5值进行比对（尽管有人证明出来md5算法是有碰撞的，但目前为止可以忽略）。</p>
+  </li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">package</span> <span class="n">com</span><span class="p">.</span><span class="n">lity</span><span class="p">.</span><span class="n">java</span><span class="p">.</span><span class="n">apis</span><span class="p">.</span><span class="n">net</span><span class="p">.</span><span class="n">download</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">java</span><span class="p">.</span><span class="n">io</span><span class="p">.</span><span class="n">BufferedInputStream</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">java</span><span class="p">.</span><span class="n">io</span><span class="p">.</span><span class="n">RandomAccessFile</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">java</span><span class="p">.</span><span class="n">net</span><span class="p">.</span><span class="n">HttpURLConnection</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">java</span><span class="p">.</span><span class="n">net</span><span class="p">.</span><span class="n">URL</span><span class="p">;</span>
+<span class="k">public</span> <span class="n">class</span> <span class="n">HttpMultiThreadDownload</span> <span class="p">{</span>
+  <span class="k">public</span> <span class="n">static</span> <span class="n">final</span> <span class="n">int</span> <span class="n">THREAD_COUNT</span> <span class="p">=</span> <span class="m">5</span><span class="p">;</span>
+
+  <span class="k">public</span> <span class="n">static</span> <span class="n">final</span> <span class="n">int</span> <span class="n">REFRESH_SPEED_TIME</span> <span class="p">=</span> <span class="m">1</span> <span class="p">*</span> <span class="m">1000</span><span class="p">;</span>
+  <span class="p">/*</span>
+  <span class="p">*</span> <span class="err">以下是测试资源：</span>
+  <span class="p">*</span> <span class="n">http</span><span class="p">://</span><span class="n">dlc2</span><span class="p">.</span><span class="n">sdo</span><span class="p">.</span><span class="n">com</span><span class="p">/</span><span class="n">FTP</span><span class="p">/</span><span class="n">AION</span><span class="p">/</span><span class="m">20120216</span><span class="p">/</span><span class="m">2</span><span class="p">/</span><span class="n">data136</span><span class="p">.</span><span class="n">zip</span>
+  <span class="p">*</span> <span class="err">如果上面的连接失效</span><span class="p">,</span><span class="err">可以找游戏资源的下载</span>
+  <span class="p">*</span>
+  <span class="p">*/</span>
+  <span class="k">public</span> <span class="n">static</span> <span class="n">void</span> <span class="n">main</span><span class="p">(</span><span class="k">String</span><span class="p">[]</span> <span class="n">args</span><span class="p">)</span> <span class="n">throws</span> <span class="n">Exception</span> <span class="p">{</span>
+    <span class="n">final</span> <span class="k">String</span> <span class="n">sourceFile</span> <span class="p">=</span> <span class="s2">"http://dlc2.sdo.com/FTP/AION/20120216/1/AION_Setup2.1.0.22.exe"</span><span class="p">;</span>
+    <span class="n">URL</span> <span class="n">url</span> <span class="p">=</span> <span class="n">new</span> <span class="n">URL</span><span class="p">(</span><span class="n">sourceFile</span><span class="p">);</span>
+    <span class="n">HttpURLConnection</span> <span class="n">conn</span> <span class="p">=</span> <span class="p">(</span><span class="n">HttpURLConnection</span><span class="p">)</span><span class="n">url</span><span class="p">.</span><span class="n">openConnection</span><span class="p">();</span>
+
+    <span class="p">//</span> <span class="err">添加这句</span><span class="p">,</span><span class="err">可能获取不到长度</span>
+    <span class="p">//</span>  <span class="n">conn</span><span class="p">.</span><span class="n">setInstanceFollowRedirects</span><span class="p">(</span><span class="nb">false</span><span class="p">);</span>
+    <span class="p">//</span> <span class="err">文件长度</span>
+    <span class="n">long</span> <span class="n">fileLength</span> <span class="p">=</span> <span class="n">conn</span><span class="p">.</span><span class="n">getContentLength</span><span class="p">();</span>
+    <span class="nf">System</span><span class="p">.</span><span class="n">out</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="s2">"fileLength:"</span> <span class="p">+</span> <span class="n">fileLength</span><span class="p">);</span>
+
+    <span class="p">//</span> <span class="err">每个线程负责的长度</span>
+    <span class="n">long</span> <span class="n">threadLength</span> <span class="p">=</span> <span class="n">fileLength</span> <span class="p">/</span> <span class="n">THREAD_COUNT</span><span class="p">;</span>
+
+
+    <span class="p">//</span> <span class="err">最后一个线程多负的一部分</span><span class="p">,</span><span class="err">可能为</span><span class="m">0</span>
+    <span class="n">long</span> <span class="n">retain</span> <span class="p">=</span> <span class="n">fileLength</span> <span class="p">%</span> <span class="n">THREAD_COUNT</span><span class="p">;</span>
+
+    <span class="p">//</span> <span class="err">线程</span><span class="m">1</span>
+    <span class="n">long</span> <span class="n">start</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+    <span class="n">long</span> <span class="n">length</span> <span class="p">=</span> <span class="n">threadLength</span><span class="p">;</span>
+
+    <span class="p">//</span> <span class="err">创建本地临时文件</span>
+    <span class="k">String</span> <span class="n">savePath</span> <span class="p">=</span> <span class="s2">"down/AION_Setup2.1.0.22.exe"</span><span class="p">;</span>
+    <span class="n">RandomAccessFile</span> <span class="n">raf</span> <span class="p">=</span> <span class="n">new</span> <span class="n">RandomAccessFile</span><span class="p">(</span><span class="n">savePath</span><span class="p">,</span> <span class="s2">"rw"</span><span class="p">);</span>
+    <span class="n">raf</span><span class="p">.</span><span class="n">seek</span><span class="p">(</span><span class="n">fileLength</span><span class="p">);</span>
+    <span class="n">raf</span><span class="p">.</span><span class="n">close</span><span class="p">();</span>
+
+    <span class="p">//</span> <span class="err">创建线程对象</span>
+    <span class="n">SubThreadDownload</span><span class="p">[]</span> <span class="n">threads</span> <span class="p">=</span> <span class="n">new</span> <span class="n">SubThreadDownload</span><span class="p">[</span><span class="n">THREAD_COUNT</span><span class="p">];</span>
+    <span class="n">for</span> <span class="p">(</span><span class="n">int</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">i</span> <span class="p">&lt;</span> <span class="n">THREAD_COUNT</span><span class="p">;</span> <span class="n">i</span><span class="p">++)</span> <span class="p">{</span>
+      <span class="n">start</span> <span class="p">=</span> <span class="n">i</span> <span class="p">*</span> <span class="n">threadLength</span><span class="p">;</span>
+      <span class="n">length</span> <span class="p">=</span> <span class="n">start</span> <span class="p">+</span> <span class="n">threadLength</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">THREAD_COUNT</span> <span class="p">-</span> <span class="m">1</span> <span class="p">==</span> <span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">length</span> <span class="p">+=</span> <span class="n">retain</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="n">SubThreadDownload</span> <span class="n">thread</span> <span class="p">=</span> <span class="n">new</span> <span class="n">SubThreadDownload</span><span class="p">(</span><span class="n">sourceFile</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">savePath</span><span class="p">,</span> <span class="s2">"thread"</span> <span class="p">+</span> <span class="n">i</span><span class="p">);</span>
+      <span class="n">threads</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">=</span> <span class="n">thread</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="p">//</span> <span class="err">开始下载</span>
+    <span class="nf">System</span><span class="p">.</span><span class="n">out</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="s2">"开始下载"</span><span class="p">);</span>
+    <span class="n">for</span> <span class="p">(</span><span class="n">int</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">i</span> <span class="p">&lt;</span> <span class="n">THREAD_COUNT</span><span class="p">;</span> <span class="n">i</span><span class="p">++)</span> <span class="p">{</span>
+      <span class="n">threads</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">start</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+<span class="n">class</span> <span class="n">SubThreadDownload</span> <span class="n">extends</span> <span class="n">Thread</span> <span class="p">{</span>
+
+  <span class="p">/*</span>
+  <span class="p">*</span> <span class="err">每个线程负责请求并保存下载文件的一部分</span>
+  <span class="p">*</span> <span class="err">由于</span><span class="n">java</span><span class="err">上</span><span class="p">,</span><span class="err">多个文件输入流可以同时写入一个文件</span>
+  <span class="p">*</span> <span class="err">并且主线程负责创建一个临时文件</span><span class="p">,</span><span class="err">子线程每个负责读取、存储这个文件的部分流</span>
+  <span class="p">*</span> <span class="err">所以它们不会出现</span><span class="p">,</span><span class="err">不同步的情况。</span>
+  <span class="p">*/</span>
+
+  <span class="p">/**</span> <span class="err">线程负责下载部分的起点</span> <span class="p">**/</span>
+  <span class="n">private</span> <span class="n">long</span> <span class="n">start</span><span class="p">;</span>
+
+  <span class="p">/**</span> <span class="err">线程负责下载部分的长度</span> <span class="p">**/</span>
+  <span class="n">private</span> <span class="n">long</span> <span class="n">length</span><span class="p">;</span>
+
+  <span class="p">/**</span> <span class="err">下载后保存的文件</span> <span class="p">**/</span>
+  <span class="n">private</span> <span class="k">String</span> <span class="n">saveFile</span><span class="p">;</span>
+
+  <span class="p">/**</span> <span class="err">下载的源文件</span> <span class="p">**/</span>
+  <span class="n">private</span> <span class="k">String</span> <span class="n">sourceFile</span><span class="p">;</span>
+  <span class="k">public</span> <span class="n">SubThreadDownload</span><span class="p">(</span><span class="k">String</span> <span class="n">sourceFile</span><span class="p">,</span> <span class="n">long</span> <span class="n">start</span><span class="p">,</span> <span class="n">long</span> <span class="n">length</span><span class="p">,</span> <span class="k">String</span> <span class="n">saveFile</span><span class="p">,</span> <span class="k">String</span> <span class="n">threadName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">super</span><span class="p">(</span><span class="n">threadName</span><span class="p">);</span>
+    <span class="n">this</span><span class="p">.</span><span class="n">start</span> <span class="p">=</span> <span class="n">start</span><span class="p">;</span>
+    <span class="n">this</span><span class="p">.</span><span class="n">length</span> <span class="p">=</span> <span class="n">length</span><span class="p">;</span>
+    <span class="n">this</span><span class="p">.</span><span class="n">saveFile</span> <span class="p">=</span> <span class="n">saveFile</span><span class="p">;</span>
+    <span class="n">this</span><span class="p">.</span><span class="n">sourceFile</span> <span class="p">=</span> <span class="n">sourceFile</span><span class="p">;</span>
+    <span class="nf">System</span><span class="p">.</span><span class="n">out</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="n">getName</span><span class="p">()</span> <span class="p">+</span> <span class="s2">", start:"</span> <span class="p">+</span> <span class="n">start</span> <span class="p">+</span> <span class="s2">", end:"</span> <span class="p">+</span> <span class="n">length</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="p">@</span><span class="n">Override</span>
+  <span class="k">public</span> <span class="n">void</span> <span class="nf">run</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">super</span><span class="p">.</span><span class="nf">run</span><span class="p">();</span>
+    <span class="n">try</span> <span class="p">{</span>
+      <span class="n">URL</span> <span class="n">url</span> <span class="p">=</span> <span class="n">new</span> <span class="n">URL</span><span class="p">(</span><span class="n">sourceFile</span><span class="p">);</span>
+      <span class="n">HttpURLConnection</span> <span class="n">conn</span> <span class="p">=</span> <span class="p">(</span><span class="n">HttpURLConnection</span><span class="p">)</span><span class="n">url</span><span class="p">.</span><span class="n">openConnection</span><span class="p">();</span>
+      <span class="n">conn</span><span class="p">.</span><span class="n">addRequestProperty</span><span class="p">(</span><span class="s2">"Range"</span><span class="p">,</span> <span class="s2">"bytes="</span> <span class="p">+</span> <span class="n">start</span> <span class="p">+</span> <span class="s2">"-"</span> <span class="p">+</span> <span class="n">length</span><span class="p">);</span>
+      <span class="n">BufferedInputStream</span> <span class="n">bis</span> <span class="p">=</span> <span class="n">new</span> <span class="n">BufferedInputStream</span><span class="p">(</span><span class="n">conn</span><span class="p">.</span><span class="n">getInputStream</span><span class="p">());</span>
+      <span class="n">byte</span><span class="p">[]</span> <span class="n">buffer</span> <span class="p">=</span> <span class="n">new</span> <span class="n">byte</span><span class="p">[</span><span class="m">2048</span><span class="p">];</span>
+      <span class="n">int</span> <span class="n">length</span> <span class="p">=</span> <span class="p">-</span><span class="m">1</span><span class="p">;</span>
+      <span class="n">RandomAccessFile</span> <span class="n">raf</span> <span class="p">=</span> <span class="n">new</span> <span class="n">RandomAccessFile</span><span class="p">(</span><span class="n">saveFile</span><span class="p">,</span> <span class="s2">"rw"</span><span class="p">);</span>
+      <span class="n">raf</span><span class="p">.</span><span class="n">seek</span><span class="p">(</span><span class="n">start</span><span class="p">);</span>
+      <span class="n">long</span> <span class="n">startTime</span> <span class="p">=</span> <span class="nf">System</span><span class="p">.</span><span class="n">currentTimeMillis</span><span class="p">();</span>
+      <span class="n">long</span> <span class="n">tempTime</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+      <span class="n">long</span> <span class="n">tempTotal</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+      <span class="k">while</span> <span class="p">(-</span><span class="m">1</span> <span class="c1">!= (length = bis.read(buffer, 0, buffer.length))) {
+</span>        <span class="n">raf</span><span class="p">.</span><span class="nb">write</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="n">length</span><span class="p">);</span>
+        <span class="n">tempTime</span> <span class="p">+=</span> <span class="nf">System</span><span class="p">.</span><span class="n">currentTimeMillis</span><span class="p">()</span> <span class="p">-</span> <span class="n">startTime</span><span class="p">;</span>
+        <span class="n">tempTotal</span> <span class="p">+=</span> <span class="n">length</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">tempTime</span> <span class="p">&gt;</span> <span class="m">1</span> <span class="p">*</span> <span class="m">1000</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nf">System</span><span class="p">.</span><span class="n">out</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="n">getName</span><span class="p">()</span> <span class="p">+</span> <span class="s2">", current speed:"</span> <span class="p">+</span> <span class="n">tempTotal</span> <span class="p">/</span> <span class="m">1024</span> <span class="p">/</span> <span class="p">(</span><span class="n">tempTime</span> <span class="p">/</span> <span class="m">1000</span><span class="p">)</span> <span class="p">+</span> <span class="s2">"kb/s"</span><span class="p">);</span>
+          <span class="n">tempTotal</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+          <span class="n">tempTime</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="p">//</span> <span class="err">最后记录开始时间</span>
+        <span class="n">startTime</span> <span class="p">=</span> <span class="nf">System</span><span class="p">.</span><span class="n">currentTimeMillis</span><span class="p">();</span>
+      <span class="p">}</span>
+      <span class="nf">System</span><span class="p">.</span><span class="n">out</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="n">getName</span><span class="p">()</span> <span class="p">+</span> <span class="s2">" is over"</span><span class="p">);</span>
+    <span class="p">}</span> <span class="n">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="n">e</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nf">System</span><span class="p">.</span><span class="n">err</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="n">getName</span><span class="p">()</span> <span class="p">+</span> <span class="s2">" has an error:"</span> <span class="p">+</span> <span class="n">e</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+:ET

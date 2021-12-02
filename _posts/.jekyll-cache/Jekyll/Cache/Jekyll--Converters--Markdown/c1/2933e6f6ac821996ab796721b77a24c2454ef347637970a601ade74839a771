@@ -1,0 +1,187 @@
+I""<p>ADB全称是：Android Debug Bridge，即安卓调试桥，是安卓sdk的一个工具。当然作为一个Android开发者不可能没有听说过adb, 此篇记录些adb工具的使用技巧，且带有探索性的总结adb在linux平台上是如何实现的，及相关adb, adbs, adbd是如何通信的。</p>
+
+<!-- more -->
+
+<h2 id="adb使用的技巧">adb使用的技巧</h2>
+
+<h4 id="1-查询当前展示的activity">1. 查询当前展示的Activity</h4>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>adb shell dumpsys activity top | <span class="nb">head</span> <span class="nt">-n</span> 10
+</code></pre></div></div>
+<p><img src="../assets/2017-12-16_dumpactivity.png" alt="dumpactivity" /></p>
+
+<h4 id="2-备份和还原所有安装的apk">2. 备份和还原所有安装的apk</h4>
+
+<ul>
+  <li>找出设备上安装的第三方apk包名:	adb shell pm list packages -3</li>
+  <li>依据apk包名找出apk:			adb shell pm path $pkg</li>
+  <li>导出apk文件:				adb shell pull $path</li>
+  <li>把导出的apk文件安装到新设备里: adb install -r $file</li>
+</ul>
+
+<p>脚本：</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/sh</span>
+<span class="nb">echo</span> <span class="nt">-n</span> <span class="s2">""</span> <span class="o">&gt;</span> apks
+adb shell pm list packages <span class="nt">-3</span> | <span class="nb">sed</span> <span class="nt">-E</span> <span class="s2">"s/</span><span class="se">\r</span><span class="nv">$/</span><span class="s2">/"</span> <span class="se">\</span>
+| <span class="k">while </span><span class="nb">read </span>line
+<span class="k">do 
+    </span><span class="nv">pkg</span><span class="o">=</span><span class="k">${</span><span class="nv">line</span><span class="p">#*</span>:<span class="k">}</span>
+    <span class="nv">line</span><span class="o">=</span><span class="si">$(</span>adb shell pm path <span class="s2">"</span><span class="nv">$pkg</span><span class="s2">"</span>&amp;<span class="si">)</span>
+    <span class="nv">path</span><span class="o">=</span><span class="k">${</span><span class="nv">line</span><span class="p">#*</span>:<span class="k">}</span>
+    <span class="nb">echo</span> <span class="nv">$pkg</span>:<span class="nv">$path</span> <span class="o">&gt;&gt;</span> apks
+<span class="k">done
+</span><span class="nb">cat </span>apks
+<span class="nb">cat </span>apks | <span class="nb">sed</span> <span class="nt">-E</span> <span class="s2">"s/</span><span class="se">\r</span><span class="nv">$/</span><span class="s2">/"</span> | <span class="k">while </span><span class="nb">read </span>line
+<span class="k">do
+    </span><span class="nv">pkg</span><span class="o">=</span><span class="k">${</span><span class="nv">line</span><span class="p">%</span>:<span class="p">*</span><span class="k">}</span>
+    <span class="nv">path</span><span class="o">=</span><span class="k">${</span><span class="nv">line</span><span class="p">#*</span>:<span class="k">}</span>
+    adb pull <span class="s2">"</span><span class="nv">$path</span><span class="s2">"</span> <span class="s2">"</span><span class="nv">$pkg</span><span class="s2">.apk"</span> 
+    <span class="nb">echo</span> <span class="nv">$path</span>
+<span class="k">done
+</span><span class="nb">rm </span>apks
+<span class="c">#echo $apks;</span>
+</code></pre></div></div>
+
+<font color="red">疑惑， 第7行通过包名查询apk安装路径时， 在命令最后添加一个＆字符， 不添加无法正常找出所有apk路径， 不知道什么原由。</font>
+
+<h4 id="3-adb调试wifi模式和usb模式切换">3. adb调试wifi模式和usb模式切换</h4>
+
+<p>手机端(root)</p>
+
+<ul>
+  <li>安装terminal</li>
+  <li>切wifi: setprop service.adb.tcp.port 5555</li>
+  <li>切wifi重启依然生效：setprop persist.adb.tcp.port 5555</li>
+  <li>切usb: setprop service.adb.tcp.port -1</li>
+  <li>stop adbd</li>
+  <li>start adbd</li>
+</ul>
+
+<p>电脑上切换wifi</p>
+
+<ul>
+  <li>切wifi: adb tcpip 5555</li>
+  <li>切usb: adb usb</li>
+</ul>
+
+<p>电脑端连接设备</p>
+
+<ul>
+  <li>wifi模式: adb connect 手机ip:5555</li>
+  <li>usb模式: 通过usb连接手机</li>
+</ul>
+
+<h2 id="adbs端和adbd端usb通信原理探索">adbs端和adbd端，usb通信原理探索</h2>
+
+<h4 id="1-识别usb设备-找到usb设备信息">1. 识别usb设备, 找到USB设备信息</h4>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lsusb
+</code></pre></div></div>
+<p><img src="../assets/2017-12-12_usb_device_info.png" alt="usb_device_info" /></p>
+
+<p>记录ID，访问网站查看usb设备类型（设备是什么）</p>
+
+<p><a href="https://usb-ids.gowdy.us/read/UD/"><strong><em>http://www.linux-usb.org</em></strong></a></p>
+
+<p>可以确实设备的Vendors和设备类型(打印机／Mass Storage等)</p>
+
+<h4 id="2-linux内核识别设备">2. Linux内核识别设备</h4>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udevadm monitor --kernel
+</code></pre></div></div>
+<p><img src="../assets/2017-12-16_usb_kernel_monitor.png" alt="usb_kernel_monitor" /></p>
+
+<p>接着去查询一下device的信息</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>udevadm info -q all -p
+</code></pre></div></div>
+<p><img src="../assets/2017-12-16_usb_kernel_info.png" alt="usb_kernel_info" /></p>
+
+<h4 id="3-adbs-访问的device文件">3. adbs 访问的device文件</h4>
+
+<p>启动adbs，查看一下进程访问的device文件</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>adb start-server
+ps -ef | grep adb
+lsof -p $pid
+</code></pre></div></div>
+<p><img src="../assets/2017-12-16_adb_access_device_file.png" alt="adb_access_device_file" /></p>
+
+<h4 id="4-adbs源代码分析">4. adbs源代码分析</h4>
+
+<p>调用栈</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>main(adb.c)
+main_adb(adb.c)
+[
+    usb_vendors_init(usb_vendors.c)
+    usb_init(usb_linux.c)
+]
+-----new thread----
+device_poll_thread(usb_linux.c)
+find_usb_device(usb_linux.c)
+kick_disconnected_devices(usb_linux.c)
+
+</code></pre></div></div>
+<p>从usb_vendors.c文件中，可以知道vendor信息是被“固化”adbs里面。（<font color="red">那是否就可以解释为啥linux不需要adb驱动呢）</font></p>
+
+<p><img src="../assets/2017-12-16_adbs_init_vendors.png" alt="adbs_init_vendors" /></p>
+
+<p>usb_linux.c文件的函数列表</p>
+
+<p><img src="../assets/2017-12-16_adbs_usb_linux_functions.png" alt="adbs_usb_linux_functions" /></p>
+
+<p>里面读取函数，主要封装linux usb 通用的访问device的方式。</p>
+
+<h4 id="5-adbd-访问的device文件">5. adbd 访问的device文件</h4>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>adb shell
+su (root权限)
+lsof &gt; /sdcard/lsof.data
+adb pull /sdcard/lsof.data
+less lsof.data
+</code></pre></div></div>
+
+<p><img src="../assets/2017-12-16_adbd_access_file.png" alt="adbd_access_file" /></p>
+
+<h4 id="6-adbd源代码分析">6. adbd源代码分析</h4>
+
+<p>调用栈</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>main(adb.c)
+main_adb(adb.c)
+usb_init(usb_linux_client.c)
+usb_adb_init(usb_linux_client.c)
+</code></pre></div></div>
+
+<p>usb_adb_init的内容, 可以确定adbd确实访问了<font color="red">/dev/android_adb</font>文件（设备结点） 
+<img src="../assets/2017-12-16_adbd_usb_adb_init.png" alt="adbd_usb_adb_init" /></p>
+
+<p>usb_linux_client.c文件定义读取函数，从实现上看它主要通过/dev/android_adb文件与外界通信。</p>
+
+<p><img src="../assets/2017-12-16_adbd_usb_linux_client_function.png" alt="adbd_usb_linux_client_function" /></p>
+
+<h4 id="7-串联adbs和adbdandroid-kernel">7. 串联adbs和adbd(android kernel)</h4>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>init(android.c)
+usb_composite_register[&amp;android_usb_driver](android.c)
+android_bind(android.c)
+usb_add_config[cdev, &amp;android_config_driver](android.c)
+android_bind_config(android.c)
+adb_function_add(f_adb.c)
+misc_deregister[&amp;adb_device](f_adb.c)
+
+static struct miscdevice adb_device = {
+  	.minor = MISC_DYNAMIC_MINOR,
+  	.name = shortname,
+  	.fops = &amp;adb_fops,
+};
+static const char shortname[] = "android_adb";
+
+</code></pre></div></div>
+
+<p>android.c和f_adb.c代码所在路径是/drivers/usb/gadget/</p>
+<font color="red">注意：这里的代码是kernel的源代码，不是Android的源代码（aosp）。如果你也下载了linux kernel, 会发现没有这两个文件的。</font>
+
+:ET

@@ -1,0 +1,3 @@
+I"b<p>Keytool是一个Java数据证书的管理工具, Keytool将密钥（key）和证书（certificates）存在一个称为keystore的文件中。这句话可能比较官方，那么keystore里到底存放什么呢，它怎么用来rsa加密呢，这里基于剖析的方式从keystore文件中抽取公钥和私钥，并用来加密/解密数据。</p>
+
+:ET

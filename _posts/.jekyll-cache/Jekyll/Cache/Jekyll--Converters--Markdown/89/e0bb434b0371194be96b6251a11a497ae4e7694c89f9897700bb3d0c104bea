@@ -1,0 +1,64 @@
+I"%<p>用c语言实现数据结构课程中三个排序小算法，聊以自娱。</p>
+
+<!-- more -->
+
+<h3 id="冒泡排序">冒泡排序</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int data[100];
+for(int i=0; i&lt;data.length; i++)
+{
+	for(int j=0; j &lt; data.length-1-i; j++)
+	{
+		if(data[j] &gt; data[j+1])
+		{
+			int temp = data[j];
+			data[j] = data[j+1];
+			data[j+1] = temp;
+		}else {
+			// don't handle
+		}
+	}
+}
+</code></pre></div></div>
+
+<h3 id="选择排序">选择排序</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int data[100];
+for(int i=0; i&lt;data.length; i++)
+{
+	int min = i;
+	for(int j=i+1; j&lt;data.length; j++)
+	{
+		if(data[j] &lt; data[min])
+		{
+			min = j;
+		}else
+		{
+			// don't handle
+		}
+	}
+	if (min != i) 
+	{
+		int temp = data[i];
+		data[i] = data[j];
+		data[j] = temp;
+	}
+}
+</code></pre></div></div>
+
+<h3 id="插入排序">插入排序</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int data[100];
+for(int i=1; i&lt;data.length; i++)
+{
+	int insert = data[i];
+	int moveItem = i;
+	while(data[moveItem] &gt; 0 &amp;&amp; data[moveItem-1] &gt; insert)
+	{
+		data[moveItem] = data[moveItem-1];
+		moveItem--;
+	}
+	data[moveItem] = insert;
+}
+</code></pre></div></div>
+:ET

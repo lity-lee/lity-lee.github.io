@@ -1,0 +1,46 @@
+I"�<p>一次偶然的需求，需要下载河南曲剧给爷爷听，很容易找到了河南豫剧网，上面有很多mp3供下载，唯一不足的地方，是不能全部下载。动态下载地址是有规律的，但打开后是一个网页里面有静态下载地址，而不302跳转，故不能使用通用的下载工具来下载。所以写这样一个shell脚本，下载mp3。</p>
+
+<!-- more -->
+
+<h3 id="批量从河南豫剧网抓取mp3曲剧">批量从河南豫剧网抓取Mp3曲剧</h3>
+
+<p>所有下载资源来自河南豫剧网(http://www.00394.net/)。</p>
+
+<p>由于此网站提供的静态下载地址不能通过迅雷批量规则来批量下载。所以此脚本的实现原理是通过规则生成相应的动态下载地址，然后抓取内容分析出静态下载地址， 然后下载到本地。</p>
+
+<p>多次浏览网站发现Mp3分类的动态下载地址为http://www.00394.net/plus/download.php?open=0&amp;aid=$i&amp;cid=3，且aid主要集中在3442-10220。</p>
+
+<p>脚本执行结束后会在当前目录生成三个文件， error存放解析失败的错误日志； ok存放解析成功的日志； result存放解析成功的静态地址。</p>
+
+<p>下面是Linux shell脚本， 你可以使用Linux系统， 也可以在Windows上模拟Linux环境， 这里推荐<a href="https://www.cygwin.com/">Cygwin</a>。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/sh</span>
+<span class="nb">rm</span> <span class="nt">-fv</span> result error ok
+<span class="k">for </span>i <span class="k">in</span> <span class="si">$(</span><span class="nb">seq </span>3442 1 10220<span class="si">)</span>
+<span class="k">do
+	</span><span class="nb">echo</span> <span class="nv">$i</span><span class="p">;</span>
+	<span class="nv">url</span><span class="o">=</span><span class="s2">"http://www.00394.net/plus/download.php?open=0&amp;aid=</span><span class="nv">$i</span><span class="s2">&amp;cid=3"</span><span class="p">;</span>
+	curl <span class="nt">-o</span> data <span class="nt">--connect-timeout</span> 20 <span class="nt">--max-time</span> 30 <span class="s2">"</span><span class="nv">$url</span><span class="s2">"</span><span class="p">;</span>
+	<span class="nv">data</span><span class="o">=</span><span class="sb">`</span><span class="nb">cat </span>data | iconv <span class="nt">-f</span> gbk <span class="nt">-t</span> utf-8<span class="sb">`</span>
+	<span class="nv">ads</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$data</span> | <span class="nb">grep</span> <span class="nt">-oE</span> <span class="s1">'href="[^"=]*\.mp3"'</span> | <span class="nb">sed</span> <span class="s1">'s/href="\([^"=]*\.mp3\)"/\1/'</span><span class="sb">`</span>
+	<span class="nb">echo</span> <span class="s2">"</span><span class="nv">$ads</span><span class="s2">"</span>
+	<span class="k">if</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$ads</span><span class="s2">"</span> <span class="o">=</span> <span class="s2">""</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+		</span><span class="nb">echo</span> <span class="s2">"fail to parse </span><span class="nv">$url</span><span class="s2">"</span><span class="p">;</span>
+		<span class="nb">echo</span> <span class="s2">"fail to parse </span><span class="nv">$url</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> error<span class="p">;</span>
+	<span class="k">else
+		</span><span class="nb">echo</span> <span class="s2">"parse </span><span class="nv">$url</span><span class="s2"> to downUrl </span><span class="nv">$ads</span><span class="s2">"</span><span class="p">;</span>
+		<span class="nb">echo</span> <span class="s2">"parse </span><span class="nv">$url</span><span class="s2"> to downUrl </span><span class="nv">$ads</span><span class="s2">"</span> <span class="o">&gt;&gt;</span> ok<span class="p">;</span>
+		<span class="nb">echo</span> <span class="nv">$ads</span> <span class="o">&gt;&gt;</span> result<span class="p">;</span>
+
+		<span class="nv">ads</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nt">-n</span> <span class="nv">$ads</span> | php <span class="nt">-r</span> <span class="s2">"echo urldecode(fgets(STDIN));"</span><span class="sb">`</span>
+		<span class="nv">fileName</span><span class="o">=</span><span class="k">${</span><span class="nv">ads</span><span class="p">##*/</span><span class="k">}</span>
+		<span class="nb">echo</span> <span class="s2">"</span><span class="nv">$fileName</span><span class="s2">"</span>
+		<span class="k">if</span> <span class="o">[</span> <span class="nt">-f</span> <span class="s2">"</span><span class="nv">$fileName</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+		else
+			</span>curl <span class="nt">-o</span> <span class="s2">"</span><span class="nv">$fileName</span><span class="s2">"</span> <span class="nt">--referer</span> <span class="s2">"</span><span class="nv">$url</span><span class="s2">"</span> <span class="s2">"</span><span class="nv">$ads</span><span class="s2">"</span>
+		<span class="k">fi
+	fi
+	</span><span class="nb">exit
+</span><span class="k">done</span>
+</code></pre></div></div>
+:ET

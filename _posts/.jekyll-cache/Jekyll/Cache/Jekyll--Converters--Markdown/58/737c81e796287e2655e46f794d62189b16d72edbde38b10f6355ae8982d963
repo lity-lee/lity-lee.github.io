@@ -1,0 +1,47 @@
+I"�<p>用c语言实现数据结构课程中三个查找小算法，聊以自娱。</p>
+
+<!-- more -->
+
+<h3 id="线性查找">线性查找</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int data[100];
+int search;
+int location = -1;
+for(int i=0, i&lt;data.length; i++)
+{
+  if(search == data[i])
+  {
+    location = i;
+    break;
+  }else {
+    // don't handle
+  }
+}
+
+</code></pre></div></div>
+
+<h3 id="二分查找针对有序数组">二分查找(针对有序数组)</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int data[100];
+int search;
+int location = -1;
+int min=0, max = data.length -1;
+while(min &lt;= max)
+{
+  int mid = (min + max)/2;
+  if(search == data[mid])
+  {
+    location = i;
+    break;
+  }else if(search &gt; data[mid])
+  {
+    min = mid + 1;
+  }else if(search &lt; data[mid])
+  {
+    max = mid-1;
+  }else {
+    // error case
+  }
+}
+</code></pre></div></div>
+:ET

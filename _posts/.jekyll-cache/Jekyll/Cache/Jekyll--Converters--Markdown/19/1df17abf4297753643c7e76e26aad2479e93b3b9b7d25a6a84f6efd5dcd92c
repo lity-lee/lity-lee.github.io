@@ -1,0 +1,18 @@
+I"t<p>记一个gcc编译参数的技巧，不一定很常用，有时却很实用。</p>
+
+<!-- more -->
+
+<h3 id="make-one-gcc-warning-an-error">Make one gcc warning an error</h3>
+
+<p>使一个gcc warning(警告)变成一个error(错误), 让编译中断, 好解决问题.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gcc -Werror=format ...
+</code></pre></div></div>
+
+<p>format的值参考gcc官方文档</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+</code></pre></div></div>
+
+<!-- more -->
+:ET

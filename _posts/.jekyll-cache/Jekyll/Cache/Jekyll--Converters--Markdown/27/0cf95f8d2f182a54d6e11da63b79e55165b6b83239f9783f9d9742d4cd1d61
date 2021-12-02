@@ -1,0 +1,175 @@
+I"�"<h3 id="dwz-是什么">DWZ 是什么</h3>
+
+<p>DWZ富客户端框架(jQuery RIA framework)，是中国人自己开发的基于jQuery实现的Ajax RIA开源框架。 DWZ富客户端框架设计目标是简单实用、扩展方便、快速开发、RIA思路、轻量级。</p>
+
+<!-- more -->
+
+<p>DWZ框架支持用HTML扩展的方式来代替JavaScript代码，只要懂HTML语法，再参考DWZ使用手册就可以做Ajax开发。开发人员不写JavaScript的情况下，也能用Ajax做项目和使用各种UI组件。 基本可以保证程序员不懂JavaScript， 也能使用各种页面组件和Ajax技术。 如果有特定需求也可以扩展DWZ做定制化开发。</p>
+
+<p>做Ajax项目时需要写大量的JavaScript才能达到满意的效果，国内很多程序员javascript不熟， 大大影响了开发速度。使用DWZ框架自动绑定JavaScript效果， 不需要开发人员去关心JavaScript怎么写，只要写标准HTML就可以了。DWZ简单扩展了HTML标准，给HTML定义了一些特别的class和attribute。DWZ框架会找到当前请求结果中的那些特别的class和attribute, 并自动关联上相应的js处理事件和效果。</p>
+
+<p>DWZ基于jQuery，可以非常方便的定制特定需求的UI组件，并以jQuery插件的形式发布出来，如有需要也可做定制化开发。</p>
+
+<p><a href="http://jui.org/"><strong><em>官方网站</em></strong></a></p>
+
+<p>我总结的：<font color="red">一个JavaScript框架，不像一个类库，不是用于扩展javascript的功能(如jQuery)， 而像扩展HTML功能的。</font></p>
+
+<h3 id="dwz-特点与优点">DWZ 特点与优点</h3>
+
+<p>第一次打开页面时载入界面到客户端, 之后和服务器的交互只是数据交互, 不占用界面相关的网络流量.</p>
+
+<p><a href="http://www.5admo.cn"><strong><em>特点演示</em></strong></a></p>
+
+<p>支持HTML扩展方式来调用DWZ组件. 
+标准化Ajax开发, 降低Ajax开发成本.</p>
+
+<ul>
+  <li>完全开源，源码没有做任何混淆处理，方便扩展。</li>
+  <li>CSS和JS代码彻底分离，修改样式方便。</li>
+  <li>简单实用，扩展方便，轻量级框架，快速开发。</li>
+  <li>仍然保留了HTML的页面布局方式。</li>
+  <li>支持HTML扩展方式调用UI组件，开发人员不需写JS。</li>
+  <li>只要懂HTML语法不需精通JS，就可以使用Ajax开发后台。</li>
+  <li>基于jQuery，UI组件以jQuery插件的形式发布，扩展方便。</li>
+</ul>
+
+<h3 id="扩展的html标签">扩展的”HTML标签”</h3>
+
+<p><a href="https://gitee.com/dwzteam/dwz_jui/raw/master/doc/dwz-user-guide.pdf"><strong><em>使用手册</em></strong></a></p>
+
+<h3 id="扩展的标签是如何实现的">扩展的标签是如何实现的</h3>
+
+<p>DWZ的初始化</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DWZ.init("dwz.frag.xml", {})
+initEnv() [async call]
+{
+	initLayout()
+	initUI()
+} [timer call] (我不喜欢定时器)
+</code></pre></div></div>
+
+<p><a href="http://www.5admo.cn/public/dwz/js/dwz.core.js"><strong><em>源代码参考</em></strong></a></p>
+
+<p>initUI分析(扩展标签的实现)及其完成的主要任务</p>
+
+<ol>
+  <li>处理各种控件，包括 tabs, jTree, checkbox, xheditor, uploadify等。</li>
+  <li>增加控件数据</li>
+  <li>绑定控件风格, 与css连接</li>
+  <li>添加控件事件处理函数</li>
+  <li>调用控件的初化函数</li>
+</ol>
+
+<p>下面摘出绑定控件风格部分</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	// init styles
+	$("input[type=text], input[type=password], textarea", $p).addClass("textInput").focusClass("focus");
+
+	$("input[readonly], textarea[readonly]", $p).addClass("readonly");
+	$("input[disabled=true], textarea[disabled=true]", $p).addClass("disabled");
+
+	$("input[type=text]", $p).not("div.tabs input[type=text]", $p).filter("[alt]").inputAlert();
+
+	//Grid ToolBar
+	$("div.panelBar li, div.panelBar", $p).hoverClass("hover");
+
+	//Button
+	$("div.button", $p).hoverClass("buttonHover");
+	$("div.buttonActive", $p).hoverClass("buttonActiveHover");
+	
+	//tabsPageHeader
+	$("div.tabsHeader li, div.tabsPageHeader li, div.accordionHeader, div.accordion", $p).hoverClass("hover");
+</code></pre></div></div>
+
+<p><a href="http://www.5admo.cn/public/dwz/js/dwz.ui.js"><strong><em>源代码参考</em></strong></a></p>
+
+<h3 id="dwzfragxml-配置文件">dwz.frag.xml 配置文件</h3>
+
+<p>从上面可以看到DWZ.init到initEnv是异步调用，原因时需要向服务器请求dwz.frag.xml文件， 此文件的内容主要是公共部分的html代码, 比如dialog, loading, pagintion等。</p>
+
+<p><a href="http://www.5admo.cn/dwz.frag.xml"><strong><em>dwz.frag.xml</em></strong></a></p>
+
+<h3 id="表单的验证与提交以增加角色为例演示">表单的验证与提交（以增加角色为例演示）</h3>
+
+<p><a href="http://www.5admo.cn"><strong><em>效果演示</em></strong></a></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+&lt;div class="pageContent"&gt;
+	&lt;form method="post" action="&lt;?php echo Yii::app()-&gt;createUrl("admin/role/Add", array('navTabId'=&gt;Yii::app()-&gt;request-&gt;getQuery('navTabId')))?&gt;" class="pageForm required-validate" onsubmit="return validateCallback(this, dialogAjaxDone)"&gt;
+		&lt;div class="pageFormContent" layoutH="56"&gt;
+			&lt;p&gt;
+				&lt;label&gt;角色名：&lt;/label&gt;
+                                &lt;input name="role[role_name]" type="text" class="required" size="30" value="" title="必须填写角色名"/&gt;
+			&lt;/p&gt;
+			&lt;p&gt;
+				&lt;label&gt;描述：&lt;/label&gt;
+				&lt;input name="role[role_desc]" type="text" size="30" value="" alt=""/&gt;
+			&lt;/p&gt;
+		&lt;/div&gt;
+		&lt;div class="formBar"&gt;
+			&lt;ul&gt;
+				&lt;li&gt;&lt;div class="buttonActive"&gt;&lt;div class="buttonContent"&gt;&lt;button type="submit"&gt;保存&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;&lt;/li&gt;
+				&lt;li&gt;
+					&lt;div class="button"&gt;&lt;div class="buttonContent"&gt;&lt;button type="button" class="close"&gt;取消&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;
+				&lt;/li&gt;
+			&lt;/ul&gt;
+		&lt;/div&gt;
+	&lt;/form&gt;
+&lt;/div&gt;
+
+</code></pre></div></div>
+
+<p>说明：</p>
+<ol>
+  <li>form 增加 class=”pageForm required-validate” onsubmit=”return validateCallback(this, dialogAjaxDone)”</li>
+  <li>必填的文本输入框增加 class=”required” title=”错误提示” 即可。</li>
+  <li>validateCallback是实现对设定规则的验证，验证失败不提交表单。</li>
+  <li>dialogAjaxDone 是表单提交后响应器响应处理函数。</li>
+  <li>一般 onsubmit的是固定的，除非dwz实现的规则无法满足您的业务验证。</li>
+</ol>
+
+<p>源代码参考：</p>
+
+<p><a href="http://www.5admo.cn/public/dwz/js/dwz.ajax.js"><strong><em>validateCallback</em></strong></a></p>
+
+<p><a href="http://www.5admo.cn/public/jquery/jquery.validate.js"><strong><em>form.valid</em></strong></a></p>
+
+<p><a href="http://www.5admo.cn/public/dwz/js/dwz.ajax.js"><strong><em>dialogAjaxDone</em></strong></a></p>
+
+<h3 id="a标签ajaxtodo扩展删除角色为例">a标签ajaxTodo扩展(删除角色为例)</h3>
+
+<p><a href="http://www.5admo.cn"><strong><em>效果演示</em></strong></a></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;a href="&lt;?php echo Yii::app()-&gt;createUrl("admin/role/delete", array('roleid'=&gt;$role-&gt;role_id))?&gt;" target="ajaxTodo" title="确定要删除角色吗?"&gt;删除角色&lt;/a&gt;
+</code></pre></div></div>
+
+<p>说明：</p>
+<ol>
+  <li>ajaxTodo扩展将弹出一个选择框，用户选择“是”后进行操作。</li>
+  <li>a标签增加 target=”ajaxTodo” title=”对话框提示内容”</li>
+</ol>
+
+<p><a href="http://www.5admo.cn/public/dwz/js/dwz.ajax.js"><strong><em>源代码参考</em></strong></a></p>
+
+<h3 id="layouth-容器高度自适应">layoutH, 容器高度自适应</h3>
+
+<p><a href="http://www.5admo.cn"><strong><em>效果演示</em></strong></a></p>
+
+<p>容器高度自适应, 只要增加扩展属性layoutH=”xx”, 单位是像素.
+LayoutH表示容器内工具栏高度.  浏览器窗口大小改变时容器高度自适应, 但容器内工具栏高度是固定的, 需要告诉js工具栏高度来计算出内容的高度.</p>
+
+<p>示例:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;div class=”layoutBox”&gt;
+	&lt;div layoutH=“150”&gt;内容&lt;/div&gt;
+&lt;/div&gt;
+</code></pre></div></div>
+<p>注意： layoutH=“150”的高度是根据含有class=”layoutBox”的父容器div动态更新的</p>
+
+<p>源代码参考：</p>
+
+<p><a href="http://www.5admo.cn/public/dwz/js/dwz.ui.js"><strong><em>initLayout</em></strong></a></p>
+
+<p><a href="http://www.5admo.cn/public/dwz/js/dwz.core.js"><strong><em>layoutH</em></strong></a></p>
+
+:ET

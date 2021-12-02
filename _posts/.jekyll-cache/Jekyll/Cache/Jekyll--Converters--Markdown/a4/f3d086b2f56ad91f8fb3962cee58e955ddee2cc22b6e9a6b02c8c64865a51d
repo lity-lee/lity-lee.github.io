@@ -1,0 +1,26 @@
+I"�<p>Get that Linux feeling - on Windows</p>
+
+<!-- more -->
+
+<h3 id="cygwin">Cygwin</h3>
+
+<p>Get that Linux feeling - on Windows</p>
+
+<p>What is it?
+Cygwin is:</p>
+
+<p>a large collection of GNU and Open Source tools which provide functionality similar to a Linux distributionon Windows.
+a DLL (cygwin1.dll) which provides substantial POSIX API functionality.</p>
+
+<p>What isn’t it?
+Cygwin is not:</p>
+
+<p>a way to run native Linux apps on Windows. You must rebuild your application from source if you want it to run on Windows.
+a way to magically make native Windows apps aware of UNIX® functionality like signals, ptys, etc. Again, you need to build your apps from source if you want to take advantage of Cygwin functionality.</p>
+
+<p>Office: http://www.cygwin.com/</p>
+
+<p>Should install flow tools</p>
+
+<p>make, python, gawk, perl, vim, ssh, sshd, rsync, git, svn, nc, gdb, curl, util-linux</p>
+:ET

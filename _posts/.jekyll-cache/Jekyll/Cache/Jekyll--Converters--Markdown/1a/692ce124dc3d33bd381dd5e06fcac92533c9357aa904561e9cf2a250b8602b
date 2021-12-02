@@ -1,0 +1,32 @@
+I"b<p>gdb远程调试，主要用手机或者嵌入式设备。gdbserver与gdb平台和版本要对应，否则无法通信。</p>
+
+<!-- more -->
+
+<h3 id="在远程主机上用gdbserver开启调试服务">在远程主机上，用gdbserver开启调试服务</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdbserver :port debug_process）
+</code></pre></div></div>
+
+<p>port为端口号; debug_process是需要调试的二进制程序(带调试信息的)</p>
+
+<h3 id="在调试机通常是pc开启gdb客户端">在调试机(通常是pc)开启gdb客户端</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gdb或者arm-linux-androideabi-gdb.exe
+</code></pre></div></div>
+
+<h3 id="加载符号symbols">加载符号symbols</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>file bin或者so
+</code></pre></div></div>
+
+<p>bin是带调试信息生成的二进制文件,　即gcc里加-g。</p>
+
+<p>so用于调试动态链接库时用,　gcc时也需加-g。</p>
+
+<h3 id="连接到gdbserver服务机">连接到gdbserver服务机</h3>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>target remote ip:port
+</code></pre></div></div>
+
+<p>ip为远程主机,　手机或者嵌入式设备的ip; port 为gdbserver开启时的端口号。</p>
+:ET
