@@ -1,7 +1,7 @@
 ---
 layout: post
 category: android
-title:  "Android sdk调试及动态加载调试"
+title:  "Android平台下sdk调试及动态加载调试"
 tags: [java,c++,c,gdb,lldb]
 ---
 
@@ -93,7 +93,7 @@ tags: [java,c++,c,gdb,lldb]
 <application android:debuggable="true" />
 ```
 
-修改工具就是apktool。 有的应用做了防apktoo处理，使用时直接报错，因为这时的目的是改资源而不是改代码，可以加 -s 选项不反编译代码。加了选项还是报错了，确实也啥好方法了，去看apktool的源代码吧或许能找方法解决方法。
+修改工具就是apktool。 有的应用做了防apktoo处理，使用时直接报错，因为这时的目的是改资源而不是改代码，可以加 -s 选项不反编译代码。加了选项还是报错了，确实也啥好方法了，去看apktool的源代码吧或许能找解决方法。
 
 ```
 apktool d  -s
@@ -104,7 +104,7 @@ apktool d  -s
 
 ##### 6. 组织代码
 
-AndriodStudio创建一个模块modulue也很方便，稍微大一点的项目基本都要模块化。把所有模块放一个AS窗口下，可以方便阅读调试整个sdk的所有代码。上面第5步，非root设备需要做一个空的应用，这时其它可以所sdk的所有modulue都“link"过来。
+AndriodStudio创建一个模块modulue也很方便，稍微大一点的项目基本都要模块化。把所有模块放一个AS窗口下，可以方便阅读调试整个sdk的所有代码。上面第5步，非root设备需要做一个空的应用，这时其实可以把sdk的所有modulue都“link"过来。
 
 ```
 include ':app', ':slice-app',
@@ -120,61 +120,70 @@ project(":modulue3").projectDir = new File("../sdk/modulue3")
 
 ##### 7. 设置断点和时机
 
-在第6步已经把所有sdk代码放在了一个AS窗口里，所以在需要调试的代码行放置断点即可。因为此时不是通过AS工具栏的debug启动调试的，而是在设备桌面点了应用的图标启动的，再去attach进程，可能需要调试的代码已经执行过去了。可以通过am来启动
+在第6步已经把所有sdk代码放在了一个AS窗口里，所以在需要调试的代码行放置断点即可。因为此时不是通过AS工具栏的debug启动调试的，而是在设备桌面点了应用的图标启动的，再去attach进程，可能需要调试的代码已经执行过去了。可以通过am启动来解决。
 
 ```
 adb shell am start -D -W com.stickgame.los2/com.DBGame.DiabloLOL.DiabloLOL
 ```
 
--D 选项是调试启动， -W选项是启动后暂停直到attach上之后代码继续执行，后面的参数是应用的launcher，可以在AndroidManifest.xml里找到。还有另外的方法，在代码里加入
+-D选项是调试启动， -W选项是启动后暂停直到attach上之后代码继续执行，后面的参数是应用的launcher，可以在AndroidManifest.xml里找到。还有另外的方法，在代码里加入
 
 ```
 android.os.Debug.waitForDebugger();
 ```
 
-代码执行到此方法时，也会暂停直到attach上之后，函数才会返回。所以断点代码行执行时机应该在这行代码之后，就可以正常调试了。
-
-Android系统调用过来的函数，有的做了耗时处理，超过一定时间就中止进程执行，比如 Service.onStartCommand 函数。
+代码执行到此方法时，也会暂停直到attach上之后，函数才会返回。所以断点代码行执行时机应该在这行代码之后，就可以正常调试了。<span style="color: red;"> Android系统调用过来的函数，有的做了耗时处理，超过一定时间就中止进程执行，比如 Service.onStartCommand 函数。</span> 
 
 
 
+##### 8. cxx添加调试符号
 
-编译带有调试信息的java，
+附加调试之后(attach上)，可以通过在lldb控制台"image list"命令查看调试符号是否加载成功。左边的箭头是attach之后暂停调试进程，暂停后才能在右边箭头处输入命令。
 
+<img src="../assets/2022-04-08_attach_pause_process.png" style="width: 100%; height: auto;" />
 
+"image list"的执行结果输出像下面这样展示so库路径不在项目目录下的，就是没有正确加载符号， 这也是第3步说的，通过lldb来验证是否"携带调试信息"的方法。
 
+```
+(lldb) image list 
+[  0] 9E1835F7-77AE-B879-3732-AC3F016F4539 0x0000005555555000 /Users/litylee/.lldb/module_cache/remote-android/.cache/9E1835F7-77AE-B879-3732-AC3F016F4539/app_process64 
+[  1] 536434BE-E259-151C-372E-D9FDA47F051B 0x000000761ea45000 /Users/litylee/.lldb/module_cache/remote-android/.cache/536434BE-E259-151C-372E-D9FDA47F051B/linker64 
+[  2] 45496853-41D0-0775-53D2-7AACA44C0309 0x000000761ac41000 /Users/litylee/.lldb/module_cache/remote-android/.cache/45496853-41D0-0775-53D2-7AACA44C0309/libandroid_runtime.so 
+[  3] 5B8F06DF-C6A0-4C9C-501A-954A84258547 0x000000761be8c000 /Users/litylee/.lldb/module_cache/remote-android/.cache/5B8F06DF-C6A0-4C9C-501A-954A84258547/libbinder.so 
+```
 
-Android开发中Java代码和Native代码调试
+既然没有正确加载到调试符号类库，那肯定是路径不对了。<span style="color: red">动态加载的类库并不是设备是arm64-v8a的，加载的类库就是一定64位的(放在arm64-v8a目录下的)， 所以要先确定进程运行时加载的库是什么</span>。比如包名是com.stickgame.los2, 类库是liblbfb.so，用下面的命令可以找到加载的库文件了。
 
-Java代码调试
+```
+adb shell ps -ef | grep com.stickgame.los2
+adb shell lsof -p  $进程id
+```
 
+<img src="../assets/2022-04-08_find_load_so.png" style="width: 100%; height: auto;" />
 
-
-
-
-
-可调试的代码和非可调试
-
-在客户端到服务端的传输中，需要实现一套安全有效的加密方式。这里在别人的基础了介绍一套解决方案。原来是用java实现的，现在改用python实现，主要是验证目的，可以在不调试代码的情况下通过抓包来解密数据，便于快速定位问题。https在安全性上没有问题，理论上是无法破解的，但在获取证书环节，有可能被做“手脚”，如中间人攻击。https相对http效率不高，所以我们基于http实现一个安全的加密方式。之所以用python实现，是因为python是一个高层次的结合了解释性、编译性、互动性和面向对象的脚本语言，且类库非常丰富。
-
-
-
-AndroidStudio断点调试动态加载应用
-java代码调试
-可调试java代码是jvm运行的是带调试信息的字节码
-
-1. 带调试信息的字节码, 一般assembleDebug编译出来的就是。确认代码是否可以调试
-
-
-2. 如果编译出来的没有调试信息的字节码是否可调试(常用第三方的sdk)呢? 
-可以. 
-
-AS里文件菜单里有"Profile or Debug APK" , 把需要调试的APK导入
-
-3. root环境下和非root环境下调试
-非root环境需要修改AndroidManifest.xml 
+再执行: adb shell file 命令， 找出编译时的BuildID。
 
 
-native调试，cxx代码可以调试并
+<img src="../assets/2022-04-08_find_buildid.png" style="width: 100%; height: auto;" />
+
+
+根据 BuildID 找出同一次编译带有调试符号的类库so就可以了，把它的目录加入到symbol 目录列表中，重新附加就可以正常调试此类库里面的代码了。
+
+```
+find . -name liblbfb.so | xargs file | grep afacd649d6b88a9af3c0404c8a7a5519a969c1dc | grep debug_info
+
+realpath ./lbfb/obj/local/arm64-v8a/liblbfb.so
+```
+
+<img src="../assets/2022-04-08_find_debug_info_so.png" style="width: 100%; height: auto;" />
+
+这个文件就是带调试信息，且与运行时对应的类库文件。 下面就把它的目录加到符号路径列表里。
+
+<img src="../assets/2022-04-08_add_symbol_dir.png" style="width: 100%; height: auto;" />
+
+再次附加调试程序，执行"image list"命令就会看到liblbfb.so库的展示和其它库已经不一样了。
+
+
+<img src="../assets/2022-04-08_attach_debug_symbol.png" style="width: 100%; height: auto;" />
 
 
