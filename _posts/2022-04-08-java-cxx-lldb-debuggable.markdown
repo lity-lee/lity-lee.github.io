@@ -93,7 +93,7 @@ tags: [java,c++,c,gdb,lldb]
 <application android:debuggable="true" />
 ```
 
-修改工具就是apktool。 有的应用做了防apktoo处理，使用时直接报错，因为这时的目的是改资源而不是改代码，可以加 -s 选项不反编译代码。加了选项还是报错了，确实也啥好方法了，去看apktool的源代码吧或许能找解决方法。
+修改工具就是apktool。 有的应用做了防apktool处理，使用时直接报错，因为这时的目的是改资源而不是改代码，可以加 -s 选项不反编译代码。加了选项还是报错了，确实也啥好方法了，去看apktool的源代码吧或许能找解决方法。
 
 ```
 apktool d  -s
