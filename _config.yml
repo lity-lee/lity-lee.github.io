@@ -31,3 +31,5 @@ collections:
 
 plugins:
  - jekyll-paginate
+
+future: true
